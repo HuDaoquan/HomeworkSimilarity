@@ -67,7 +67,7 @@ public class EasyExcelUtil {
         WriteSheet sheetMax = EasyExcel.writerSheet(1, "简略结果").head(SimilarityOutEntity.class).build();
         excelWriter.write(sortMaxResultList, sheetMax);
         
-        WriteSheet sheetPlagiarize = EasyExcel.writerSheet(2, "抄袭名单").head(SimilarityOutEntity.class).build();
+        WriteSheet sheetPlagiarize = EasyExcel.writerSheet(2, "抄袭名单").head(PlagiarizeEntity.class).build();
         excelWriter.write(plagiarizeEntityList, sheetPlagiarize);
         
         excelWriter.finish();

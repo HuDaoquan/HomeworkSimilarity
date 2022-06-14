@@ -53,25 +53,25 @@ public class SimilarityOutEntity {
      **/
     @ColumnWidth(10)
     @ExcelProperty(value = "jaccard相似度", index = 3)
-    private Double jaccardSim;
+    private String jaccardSim;
     
     /**
      * 余弦相似度
      **/
     @ColumnWidth(10)
     @ExcelProperty(value = "余弦相似度", index = 4)
-    private Double conSim;
+    private String conSim;
     /**
      * 图片相似度
      **/
     @ColumnWidth(10)
     @ExcelProperty(value = "图片相似度", index = 5)
-    private Double avgPicSim;
+    private String avgPicSim;
     
     /**
      * 加权相似度
      **/
     @ColumnWidth(10)
     @ExcelProperty(value = "加权相似度", index = 6)
-    private Double weightedSim;
+    private String weightedSim;
 }
