@@ -67,17 +67,17 @@ public class UIhdq extends JPanel {
         panel1.setToolTipText("");
         scrollPane1 = new JScrollPane();
         docLocationTextArea = new JTextArea();
-        Font x = new Font("宋体", 0, 15);
+        Font x = new Font("仿宋", 0, 15);
         docLocationTextArea.setFont(x);
         docLocationTextArea.setToolTipText("查重结果");
         label1 = new JLabel();
-        label1.setFont(new Font("宋体", Font.BOLD, 14));
+        label1.setFont(new Font("仿宋", Font.BOLD, 14));
         label1.setToolTipText("");
         tableShowJPanel = new JPanel();
         Border border = new javax.swing.border.CompoundBorder(new javax.swing.border.TitledBorder(
                 new javax.swing.border.EmptyBorder(0, 0, 0, 0), "使用中如有疑问，请联系1455523026@qq.com",
                 javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.BOTTOM,
-                new java.awt.Font("宋体", java.awt.Font.BOLD, 15), java.awt.Color.red), getBorder());
+                new java.awt.Font("仿宋", java.awt.Font.BOLD, 15), java.awt.Color.red), getBorder());
         setBorder(border);
         addPropertyChangeListener(new java.beans.PropertyChangeListener() {
             @Override
@@ -148,20 +148,20 @@ public class UIhdq extends JPanel {
         txtpnrnrncsvexcelrn.setBounds(10, 55, 559, 186);
         tableShowJPanel.add(txtpnrnrncsvexcelrn);
         textPath = new JTextField();
-        textPath.setFont(new Font("宋体", Font.PLAIN, 16));
+        textPath.setFont(new Font("仿宋", Font.PLAIN, 16));
         textPath.setBackground(SystemColor.menu);
         textPath.setEditable(false);
         textPath.setBounds(145, 13, 425, 32);
         tableShowJPanel.add(textPath);
         textPath.setColumns(10);
         JLabel label = new JLabel("您选择的查重路径是：");
-        label.setFont(new Font("宋体", Font.PLAIN, 14));
+        label.setFont(new Font("仿宋", Font.PLAIN, 14));
         label.setBounds(10, 16, 145, 29);
         tableShowJPanel.add(label);
         searchButton = new JButton();
         searchButton.setBounds(598, 14, 145, 33);
         tableShowJPanel.add(searchButton);
-        searchButton.setFont(new Font("宋体", Font.BOLD, 16));
+        searchButton.setFont(new Font("仿宋", Font.BOLD, 16));
         searchButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -186,16 +186,16 @@ public class UIhdq extends JPanel {
         {
             panel2.setLayout(new GridLayout(6, 1, 0, 3));
             wordBox = new JCheckBox("打开智能分词");
-            wordBox.setFont(new Font("宋体", Font.PLAIN, 16));
+            wordBox.setFont(new Font("仿宋", Font.PLAIN, 16));
             wordBox.setToolTipText("取消勾选会将每个词语分成最小颗粒。如：“笔记本电脑”=【笔记本电脑, 笔记本, 笔记, 电脑】，提高精度");
             wordBox.setSelected(true);
             panel2.add(wordBox);
             picBox = new JCheckBox("打开图片查重");
-            picBox.setFont(new Font("宋体", Font.PLAIN, 16));
+            picBox.setFont(new Font("仿宋", Font.PLAIN, 16));
             picBox.setToolTipText("勾选后会对文档中图片进行比较，但会严重降低比较速度，当图片过多时计算会很慢");
             panel2.add(picBox);
             // sortBox = new JCheckBox("打开排序输出");
-            // sortBox.setFont(new Font("宋体", Font.PLAIN, 16));
+            // sortBox.setFont(new Font("仿宋", Font.PLAIN, 16));
             // sortBox.setToolTipText("勾选后输出查重结果会按相似度降序排序！会增加运算时间,不建议勾选");
             // panel2.add(sortBox);
         }
@@ -214,7 +214,7 @@ public class UIhdq extends JPanel {
         
         JButton beginButton = new JButton("开始查重");
         beginButton.setForeground(Color.BLACK);
-        beginButton.setFont(new Font("宋体", Font.BOLD, 20));
+        beginButton.setFont(new Font("仿宋", Font.BOLD, 20));
         beginButton.addMouseListener(new MouseAdapter() {
             int index = 1;
             
@@ -231,6 +231,9 @@ public class UIhdq extends JPanel {
 //获取相似度阈值
                 String threshold = (String) comboBox.getSelectedItem();
                 switch (threshold) {
+                    case "20%":
+                        simThre = 0.2;
+                        break;
                     case "30%":
                         simThre = 0.3;
                         break;
@@ -272,7 +275,7 @@ public class UIhdq extends JPanel {
     /**
      * 控制台重定向
      *
-     * @param args
+     * @param
      */
     public static void redirectConsole() {
         OutputStream textAreaStream = new OutputStream() {
