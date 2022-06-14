@@ -22,13 +22,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.stream.Collectors;
 
+/**
+ * 文档相似度计算
+ *
+ * @Author: HuDaoquan
+ * @Email: 1455523026@qq.com
+ * @Date: 2019/6/13 12:27
+ * @Version 1.0
+ */
 public class CompareOptimize {
     public static void main(String[] args) {
         /*  需要查重的路径*/
-        String path = "D:\\桌面\\查重";
+        String path = "D:\\桌面\\查重大文本";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         
@@ -153,8 +160,7 @@ public class CompareOptimize {
                         docLeftAllPictureMaxSim.add(docLeftPictureKSimMax);
                     }
                     // 求出文档1的所有图片相似度均值作为本次的图片相似度
-                    avgPicSim =
-                            docLeftAllPictureMaxSim.stream().collect(Collectors.averagingDouble(Double::doubleValue));
+                    avgPicSim = docLeftAllPictureMaxSim.stream().collect(Collectors.averagingDouble(Double::doubleValue));
                     // 如果任意一个文本图片为空，则总相似度不考虑图片相似度
                     if (docLeft.getPictureHash().isEmpty() && docRight.getPictureHash().isEmpty()) {
                         /*  将文本相似度结果平方，，调整相似度*/

@@ -31,7 +31,7 @@ public class FileUtils {
      *
      * @return
      */
-    public String getFileEncode(String path) {
+    public static String getFileEncode(String path) {
         String charset = "asci";
         byte[] first3Bytes = new byte[3];
         BufferedInputStream bis = null;
@@ -110,7 +110,7 @@ public class FileUtils {
      *
      * @return 给定Word文档中的文字内容
      */
-    public String readWordtxt(String path) {
+    public static String readWordtxt(String path) {
         String buffer = "";
         try {
             if (path.endsWith(".doc")) {
@@ -127,7 +127,7 @@ public class FileUtils {
                 System.out.println("此文件不是word文件！");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("打开文件报错" + e);
         }
         return buffer;
     }
@@ -135,7 +135,7 @@ public class FileUtils {
     /**
      * 通过路径获取文件的内容，这个方法因为用到了字符串作为载体，为了正确读取文件（不乱码），只能读取文本文件，安全方法！
      */
-    public String readTxt(String path) {
+    public static String readTxt(String path) {
         String data = null;
         File file = new File(path);
         // 获取文件编码格式
@@ -181,7 +181,7 @@ public class FileUtils {
      *
      * @return 返回读取后的文字字符串
      */
-    public String readFile(String filePath) {
+    public static String readFile(String filePath) {
         File file = new File(filePath);
         String SB = null;
         if (file.exists() && file.isFile()) {
