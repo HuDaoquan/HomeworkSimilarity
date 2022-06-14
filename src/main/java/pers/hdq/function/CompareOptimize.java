@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class CompareOptimize {
     public static void main(String[] args) {
         /*  需要查重的路径*/
-        String path = "D:\\桌面\\查重大文本";
+        String path = "D:\\桌面\\查重图片";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         
@@ -90,13 +90,9 @@ public class CompareOptimize {
             //获取文件名、文件路径等信息
             DocFileEntity docEntity = getDocFileName(s);
             //将每个文档的文本返回
-            String text = fileUtils.readFile(s);
             /*  去除数字和字母*/
-            text = text.replaceAll("[0-9a-zA-Z]", "");
-            docEntity.setChineseText(text);
             /*  使用IK分词器分词*/
-            List<String> wordList = ikWordSegmentation.segStr(text, ikFlag);
-            docEntity.setWordList(wordList);
+            docEntity.setWordList(ikWordSegmentation.segStr(FileUtils.readFile(s).replaceAll("[0-9a-zA-Z]", ""), ikFlag));
             // 比较图片相似度
             if (pictureSimFlag) {
                 /*  将图片写入本地文档，并返回绝对路径*/
@@ -141,7 +137,6 @@ public class CompareOptimize {
                 /*  存最终结果*/
                 double weightedSim = 0;
                 if (pictureSimFlag) {
-                    
                     // 文档1中每张图片与文档2中所有图片相似度的最大值的集合
                     List<Double> docLeftAllPictureMaxSim = new ArrayList<>(docLeft.getPictureHash().size());
                     for (String hashLeft : docLeft.getPictureHash()) {
@@ -179,8 +174,8 @@ public class CompareOptimize {
                 if (weightedSim > threshold || jaccardSim > 0.90 || conSim > 0.95 || avgPicSim > 0.90) {
                     judgeResult = "存在抄袭可能";
                     //抄袭名单
-                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docLeft.getFileName()).build());
-                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docRight.getFileName()).build());
+                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docLeft.getAbsolutePath()).build());
+                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docRight.getAbsolutePath()).build());
                 }
                 finishDocCount++;
                 System.out.println(docLeft.getFileName() + "  与  " + docRight.getFileName() + "\n\tJac相似度为:" + df.format(jaccardSim)
@@ -194,9 +189,9 @@ public class CompareOptimize {
                         .conSim(numFormat.format(conSim))
                         .avgPicSim(numFormat.format(avgPicSim))
                         .jaccardSim(numFormat.format(jaccardSim))
-                        .leftDocName(docLeft.getFileName())
+                        .leftDocName(docLeft.getAbsolutePath())
                         .weightedSim(numFormat.format(weightedSim))
-                        .rightDocName(docRight.getFileName())
+                        .rightDocName(docRight.getAbsolutePath())
                         .build();
                 
                 docLeftAllSimList.add(cellSimEntity);
