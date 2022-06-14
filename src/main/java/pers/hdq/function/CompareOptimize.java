@@ -2,343 +2,267 @@ package pers.hdq.function;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import pers.hdq.ik.IKWordSegmentation;
+import pers.hdq.model.DocFileEntity;
+import pers.hdq.model.PlagiarizeEntity;
+import pers.hdq.model.SimilarityOutEntity;
 import pers.hdq.picture.SaveHash;
 import pers.hdq.similarity.CosineSimilarity;
 import pers.hdq.similarity.Jaccard;
 import pers.hdq.traverse.FileUtils;
 import pers.hdq.traverse.WordPicture;
+import pers.hdq.util.EasyExcelUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class CompareOptimize {
     public static void main(String[] args) {
-        String path = "D:\\我的文档\\桌面\\测"; // 需要查重的路径
-        long startTime = System.currentTimeMillis(); // 获取开始时间
-        CompareOptimize com = new CompareOptimize();
-        System.err.println("相似度计算结果已存入：" + com.calculateFileSimilarity(path, false, false, false, 0.9));
-        long endTime = System.currentTimeMillis(); // 获取结束时间
-        System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s"); // 输出程序运行时间
+        /*  需要查重的路径*/
+        String path = "D:\\桌面\\查重";
+        /*  获取开始时间*/
+        long startTime = System.currentTimeMillis();
+        
+        System.err.println("相似度计算结果已存入：" + calculateFileSimilarity(path, true, false, 0.5));
+        /*  获取结束时间*/
+        long endTime = System.currentTimeMillis();
+        /*  输出程序运行时间*/
+        System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s");
     }
     
     /**
-     * @param path          需要查重的文件夹
-     * @param IntelligentIK 是否打开智能分词，为false显示最小粒度分词结果
-     * @param pictureSim    是否计算文档中图片相似度，为是会增加准确率，但会极大增加运算时间
-     * @param isSort        是否排序输出，为是将多出25%的运算时间。
-     * @param simThre       相似度阈值
+     * @param path           需要查重的文件夹
+     * @param ikFlag         是否打开智能分词，为false显示最小粒度分词结果
+     * @param pictureSimFlag 是否计算文档中图片相似度，为是会增加准确率，但会极大增加运算时间
+     * @param threshold      相似度阈值
      *
      * @return 返回写入比较结果的csv文件的路径
      */
     
-    public String calculateFileSimilarity(String path, Boolean IntelligentIK, Boolean pictureSim, Boolean isSort,
-                                          Double simThre) {
-        SaveHash SH = new SaveHash(); // Phash算法修改
-        Map<String, String> savePicHash = new TreeMap<String, String>(); // 存储所有图片Hash指纹
-        FileUtils F = new FileUtils(); // 文件读取
-        CosineSimilarity cs = new CosineSimilarity(); // 余弦相似度
-        Jaccard J = new Jaccard(); // Jaccard相似度
+    public static String calculateFileSimilarity(String path, Boolean ikFlag, Boolean pictureSimFlag,
+                                                 Double threshold) {
+        // Phash算法修改
+        SaveHash saveHash = new SaveHash();
+        /*  存储所有图片Hash指纹*/
+        Map<String, String> allPictureHashMap = new TreeMap<String, String>();
+        /*  文件读取*/
+        FileUtils fileUtils = new FileUtils();
+        /*  余弦相似度*/
+        CosineSimilarity cosineSimilarity = new CosineSimilarity();
+        /*  Jaccard相似度*/
+        Jaccard jaccard = new Jaccard();
         DecimalFormat df = new DecimalFormat("0.00%");
-//		CsvFilePrinter CP = new CsvFilePrinter(); // 写csv
-        WriteExcel WE = new WriteExcel();
-        WordPicture WP = new WordPicture(); // 读取Word中的图片类
-        IKWordSegmentation IK = new IKWordSegmentation();
-
-//		String csvFilePath = path
-//				+ "\\文本相似度".concat(IntelligentIK.toString() + "智能分词-" + pictureSim.toString() + "图片查重")
-//						.concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".csv");// csv路径
-//		String csvePath = path + "\\疑似抄袭名单".concat(IntelligentIK.toString() + "智能分词-" + pictureSim.toString() + "图片查重")
-//				.concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".csv");// csv路径
+        /*  读取Word中的图片类*/
+        WordPicture wordPicture = new WordPicture();
+        IKWordSegmentation ikWordSegmentation = new IKWordSegmentation();
+        //导出的excel文档
+        String excelPath =
+                path + "\\查重结果".concat(ikFlag.toString() + "智能分词-" + pictureSimFlag.toString() + "图片查重").concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".xlsx");
         
-        String ExcelPath = path + "\\查重结果".concat(IntelligentIK.toString() + "智能分词-" + pictureSim.toString() + "图片查重")
-                .concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".xls");// csv路径
-        List<Result> results = new ArrayList<Result>(); // 将结果类存入List
-        Set<String> simName = new HashSet<String>(); // 抄袭名单
-        Vector<String> vecFile = new Vector<String>(); // 存储文档绝对路径集合
-        Vector<String> vs = recursionWord(path, vecFile); // 将遍历了的文档 绝对路径存入数组，方便调用
-        int suma = (vs.size() - 1) * vs.size() / 2;
-        // 比较图片相似度
-        if (pictureSim) {
-            for (int f = 0; f < vs.size(); f++) {
-                WP.readWordPicture(vs.get(f)); // 将图片写入本地文档
+        /*  递归遍历目录；获取所有文档绝对路径*/
+        List<String> allDocAbsolutePath = recursionWord(path);
+        //总计算次数
+        int sumCount = (allDocAbsolutePath.size() - 1) * allDocAbsolutePath.size() / 2;
+        
+        System.out.println("开始计算文本相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次");
+        //存储所有图片的绝对路径
+        // List<String> allPictureAbsolutePath = new ArrayList<>(allDocAbsolutePath.size());
+        List<DocFileEntity> allDocEntity = new ArrayList<>(allDocAbsolutePath.size());
+        //遍历处理所有文件
+        for (String s : allDocAbsolutePath) {
+            // allPictureAbsolutePath.addAll(oneDocPicturePath);
+            //获取文件名、文件路径等信息
+            DocFileEntity docEntity = getDocFileName(s);
+            //将每个文档的文本返回
+            String text = fileUtils.readFile(s);
+            /*  去除数字和字母*/
+            text = text.replaceAll("[0-9a-zA-Z]", "");
+            docEntity.setChineseText(text);
+            /*  使用IK分词器分词*/
+            List<String> wordList = ikWordSegmentation.segStr(text, ikFlag);
+            docEntity.setWordList(wordList);
+            // 比较图片相似度
+            if (pictureSimFlag) {
+                /*  将图片写入本地文档，并返回绝对路径*/
+                List<String> oneDocPicturePath = wordPicture.getWordPicture(docEntity);
+                List<String> oneDocPictureHash = new ArrayList<>(oneDocPicturePath.size());
+                // 计算图片的hash指纹
+                oneDocPicturePath.forEach(pictureFile -> oneDocPictureHash.add(saveHash.getFeatureValue(pictureFile)));
+                docEntity.setPictureHash(oneDocPictureHash);
+                System.out.println(docEntity.getFileName() + "包含" + oneDocPicturePath.size() + "张图片");
             }
-            Vector<String> vecFilePicHash1 = new Vector<String>(); // 存储文档中的图片绝对路径集合
-            Vector<String> vsPicHash1 = recursionPhoto(path, vecFilePicHash1); // 将遍历了的图片绝对路径存入
-            System.out.println("\n正在处理图片，请稍后");
-            for (int d = 0; d < vsPicHash1.size(); d++) {
-                File file = new File(vsPicHash1.get(d));
-                String picAbsolutePath = file.getAbsolutePath();
-                String hashValues = SH.getFeatureValue(vsPicHash1.get(d));
-                savePicHash.put(picAbsolutePath, hashValues);
-            }
-            System.out.println("总共有" + vs.size() + "个文件" + vsPicHash1.size() + "张图片，常规最多需要3-5分钟");
-        } else {
-            System.out.println("总共有" + vs.size() + "个文件，需要比较" + suma + "次" + "\n大概需要" + suma / 30 + "秒");
+            allDocEntity.add(docEntity);
         }
-        System.out.println("开始计算文本相似度");
+        
         // 冒泡排序原理遍历比较文件
-        int dex = 1;
-        List<Result> sortMaxRList = new ArrayList<Result>();
-        for (int i = 0; i < vs.size() - 1; i++) {
-            List<Double> simMax = new ArrayList<Double>();
-            List<Result> tempRList = new ArrayList<Result>();
-            for (int j = i + 1; j < vs.size(); j++) {
+        // 已经比较过的文档数量
+        int finishDocCount = 0;
+        // sheet2中简略结果数据
+        List<SimilarityOutEntity> sortMaxResultList = new ArrayList<>(allDocAbsolutePath.size());
+        // sheet1中详细所有数据
+        List<SimilarityOutEntity> detailList = new ArrayList<>(allDocAbsolutePath.size());
+        // sheet3中抄袭名单
+        List<PlagiarizeEntity> plagiarizeEntityList = new ArrayList<>();
+        //将小数格式化为百分数
+        NumberFormat numFormat = NumberFormat.getPercentInstance();
+        // 遍所有文档信息冒泡原理两两比较文档相似度
+        for (int i = 0; i < allDocEntity.size() - 1; i++) {
+            // 文档1与其后所有文档的相似度
+            List<SimilarityOutEntity> docLeftAllSimList = new ArrayList<>();
+            // 文档1
+            DocFileEntity docLeft = allDocEntity.get(i);
+            for (int j = i + 1; j < allDocEntity.size(); j++) {
+                DocFileEntity docRight = allDocEntity.get(j);
                 // 比较文本相似度
-                String str1 = F.readFile(vs.get(i));// 读取文件，返回文本字符串
-                String str2 = F.readFile(vs.get(j));
-                str1 = str1.replaceAll("[0-9a-zA-Z]", ""); // 去除数字和字母
-                str2 = str2.replaceAll("[0-9a-zA-Z]", "");
-                List<String> list1 = IK.segStr(str1, IntelligentIK); // 使用IK分词器分词
-                List<String> list2 = IK.segStr(str2, IntelligentIK);
-                double conSim = cs.sim(list1, list2); // 余弦相似度
-                double JaccSim = J.jaccardSimilarity(list1, list2);
-                Result R = new Result();// 每次都是新的结果
-                String fileName1 = getFileName(vs.get(i))[0];
-                String fileName2 = getFileName(vs.get(j))[0];
-                String crib = "";
-                double avgPicSim = 0;// 存图片相似度的
-                double sim = 0; // 存最终结果
-                if (pictureSim) {
-//					System.out.println("getFileName(vs.get(i))[1]---------" + getFileName(vs.get(i))[1]);
-                    Vector<String> vecFilePic1 = new Vector<String>(); // 存储文档i的图片绝对路径集合
-                    Vector<String> vsPic1 = recursionPhoto(getFileName(vs.get(i))[1], vecFilePic1); // 将遍历了的tupian
-                    // 绝对路径存入数组，方便调用
-                    Vector<String> vecFilePic2 = new Vector<String>(); // 存储文档j的图片绝对路径集合
-                    Vector<String> vsPic2 = recursionPhoto(getFileName(vs.get(j))[1], vecFilePic2); // 将遍历了的tupian
-                    // 绝对路径存入数组，方便调用
-                    List<Double> lt2 = new ArrayList<>();
-//					System.out.println("getFileName(vs.get(j))[1]---------" + getFileName(vs.get(j))[1]);
-//					System.err.println(fileName1 + "  " + vsPic1.size());
-                    for (int k = 0; k < vsPic1.size(); k++) {
-//						System.err.println(fileName2 + "  " + vsPic2.size());
-                        List<Double> lt1 = new ArrayList<>();
-                        for (int s = 0; s < vsPic2.size(); s++) {
-                            double picsim;
-                            String hash1 = savePicHash.get(vsPic1.get(k));
-                            String hash2 = savePicHash.get(vsPic2.get(s));
-                            picsim = SH.getSimilarity(hash1, hash2);
-                            lt1.add(picsim);
-                            if (picsim > 0.9) // 找到某张图相似度超过90%就不再比较后面了
-							{
-								break;
-							}
-                        }
-                        // 求出最大值
-//						System.out.println(lt1.size());
-                        double max = 0;
-                        if (!lt1.isEmpty()) {
-                            max = lt1.get(0);
-                            // System.out.println(lt1.size());
-                            for (int c = 1; c < lt1.size(); c++) {
-                                if (max < lt1.get(c)) {
-                                    max = lt1.get(c);
-                                }
+                
+                /*  余弦相似度*/
+                double conSim = cosineSimilarity.sim(docLeft.getWordList(), docRight.getWordList());
+                double jaccardSim = jaccard.jaccardSimilarity(docLeft.getWordList(), docRight.getWordList());
+                double textSim = (conSim + jaccardSim) / 2;
+                String judgeResult = "";
+                /*  存图片相似度*/
+                double avgPicSim = 0;
+                /*  存最终结果*/
+                double weightedSim = 0;
+                if (pictureSimFlag) {
+                    
+                    // 文档1中每张图片与文档2中所有图片相似度的最大值的集合
+                    List<Double> docLeftAllPictureMaxSim = new ArrayList<>(docLeft.getPictureHash().size());
+                    for (String hashLeft : docLeft.getPictureHash()) {
+                        List<Double> leftDocPictureSimList = new ArrayList<>(docLeft.getPictureHash().size());
+                        for (String hashRight : docRight.getPictureHash()) {
+                            double pictureSim = SaveHash.getSimilarity(hashLeft, hashRight);
+                            leftDocPictureSimList.add(pictureSim);
+                            /*  找到某张图相似度超过90%就不再比较后面了，直接比较文档1的下一张图*/
+                            if (pictureSim > 0.9) {
+                                break;
                             }
                         }
-                        lt2.add(max);
+                        // 求出文档1中某张图片与文档2中所有图片相似度的最大值
+                        double docLeftPictureKSimMax =
+                                leftDocPictureSimList.stream().max(Comparator.comparing(Double::doubleValue)).orElse(0D);
+                        docLeftAllPictureMaxSim.add(docLeftPictureKSimMax);
                     }
-                    // 求出图片相似度均值
-                    double sum = 0;
-                    for (int d = 0; d < lt2.size(); d++) {
-                        sum += lt2.get(d);
-                    }
-                    if (lt2.size() == 0) {
-                        avgPicSim = 0;
+                    // 求出文档1的所有图片相似度均值作为本次的图片相似度
+                    avgPicSim =
+                            docLeftAllPictureMaxSim.stream().collect(Collectors.averagingDouble(Double::doubleValue));
+                    // 如果任意一个文本图片为空，则总相似度不考虑图片相似度
+                    if (docLeft.getPictureHash().isEmpty() && docRight.getPictureHash().isEmpty()) {
+                        /*  将文本相似度结果平方，，调整相似度*/
+                        weightedSim = (Math.pow(textSim, 1.5) + avgPicSim);
                     } else {
-                        avgPicSim = sum / lt2.size();// 图片相似度
-                    }
-//				System.out.println("avgPicSim==="+avgPicSim);
-                    double txtsim = (conSim + JaccSim) / 2;
-                    if (vsPic2.isEmpty() && vsPic1.isEmpty()) {
-                        sim = (Math.pow(txtsim, 1.5) + avgPicSim);// 将文本相似度结果平方，，调整相似度
-                    } else {
-                        sim = Math.pow(txtsim, 1.5) * 0.6 + avgPicSim * 0.4;// 将文本相似度结果算1.5次方，，调整相似度
+                        /*  将文本相似度结果算1.5次方，，调整相似度*/
+                        weightedSim = Math.pow(textSim, 1.5) * 0.6 + avgPicSim * 0.4;
                     }
                 } else {
                     // 不计算图片相似度
-                    double txtsim = (conSim + JaccSim) / 2;
-                    sim = (Math.pow(txtsim, 1.5) + avgPicSim);// 将文本相似度结果平方，，调整相似度
+                    textSim = (conSim + jaccardSim) / 2;
+                    /*  将文本相似度结果平方，，调整相似度*/
+                    weightedSim = (Math.pow(textSim, 1.5) + avgPicSim);
                 }
-                simMax.add(sim);
-                if (sim > simThre || JaccSim > 0.90 || conSim > 0.95 || avgPicSim > 0.90) {
-                    crib = "高度抄袭";
+                
+                if (weightedSim > threshold || jaccardSim > 0.90 || conSim > 0.95 || avgPicSim > 0.90) {
+                    judgeResult = "存在抄袭可能";
+                    //抄袭名单
+                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docLeft.getFileName()).build());
+                    plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docRight.getFileName()).build());
                 }
-                if (!isSort) {
-                    System.out.println(fileName1 + "  与  " + fileName2 + "\n\tJac相似度为:" + df.format(JaccSim)
-                            + "\n\t余弦相似度为:" + df.format(conSim) + "\n\t图片相似度为:" + df.format(avgPicSim) + "\n\t加权相似度为:"
-                            + df.format(sim) + "\n  参考判定:" + crib + "\n还有" + (suma - dex) + "份数据需要比较");
-                    dex++;
-                    // 写入csv的内容
-//					String[] values = { crib, fileName1, fileName2, conSim + "", JaccSim + "", avgPicSim + "",
-//							sim + "" };//写CSV
-                    List<Object> valuesList = new ArrayList<>();
-                    valuesList.add(crib);
-                    valuesList.add(fileName1);
-                    valuesList.add(fileName2);
-                    valuesList.add(conSim);
-                    valuesList.add(JaccSim);
-                    valuesList.add(avgPicSim);
-                    valuesList.add(sim);
-                    try {
-//						CP.CsvWrite(csvFilePath, values, true);
-                        WE.writeEXCEL(ExcelPath, "详细结果", valuesList);
-                        valuesList.clear();
-                    } catch (IOException e) {
-                        // TODO 自动生成的 catch 块
-                        e.printStackTrace();
-                    }
-                }
-                R.setName1(fileName1);
-                R.setName2(fileName2);
-                R.setConSim(conSim);
-                R.setJaccardSim(JaccSim);
-                R.setAvgPicSim(avgPicSim);
-                R.setSim(sim);
-                R.setCrib(crib);
-                results.add(R);
-                tempRList.add(R);
+                finishDocCount++;
+                System.out.println(docLeft.getFileName() + "  与  " + docRight.getFileName() + "\n\tJac相似度为:" + df.format(jaccardSim)
+                        + "\n\t余弦相似度为:" + df.format(conSim) + "\n\t图片相似度为:" + df.format(avgPicSim) + "\n\t加权相似度为:"
+                        + df.format(weightedSim) + "\n  参考判定:" + judgeResult + "\n还有" + (sumCount - finishDocCount) +
+                        "份数据需要比较");
+                
+                
+                SimilarityOutEntity cellSimEntity = SimilarityOutEntity.builder()
+                        .judgeResult(judgeResult)
+                        .conSim(numFormat.format(conSim))
+                        .avgPicSim(numFormat.format(avgPicSim))
+                        .jaccardSim(numFormat.format(jaccardSim))
+                        .leftDocName(docLeft.getFileName())
+                        .weightedSim(numFormat.format(weightedSim))
+                        .rightDocName(docRight.getFileName())
+                        .build();
+                
+                docLeftAllSimList.add(cellSimEntity);
             }
-            for (Result p : results) {
-                if (getFileName(vs.get(i))[0].equals(p.getName2())) {
-                    // 比如第5份文档，要加入1-4与5的比较结果；交换文件名变成5与1-4比较，防止重复值干扰
-                    String temp = p.getName1();
-                    p.setName1(p.getName2());
-                    p.setName2(temp);
-                    tempRList.add(p);
-                }
+            if (allDocEntity.size() < 200) {
+                detailList.addAll(docLeftAllSimList);
             }
             
-            Collections.sort(tempRList);
-//			Result rTemp = tempRList.get(0); // 求出每个人的最大值
             
-            for (Result rTemp : tempRList) {
-//					System.err.println(rTemp.getSim() + "  " + tempRList.get(0).getSim() + "  "
-//							+ (rTemp.getSim() == tempRList.get(0).getSim()) + "  ---   "
-//							+ (rTemp.getSim().equals(tempRList.get(0).getSim())));
-                if (rTemp.getSim().equals(tempRList.get(0).getSim())) {
-                    sortMaxRList.add(rTemp); // 加入后期排序
-                    if (!isSort) {
-                        List<Object> valuesList = new ArrayList<>();
-                        valuesList.add(rTemp.getCrib());
-                        valuesList.add(rTemp.getName1());
-                        valuesList.add(rTemp.getName2());
-                        valuesList.add(rTemp.getConSim());
-                        valuesList.add(rTemp.getJaccardSim());
-                        valuesList.add(rTemp.getAvgPicSim());
-                        valuesList.add(rTemp.getSim());
-                        try {
-//					CP.CsvWrite(csvFilePath, values, true);
-                            WE.writeEXCEL(ExcelPath, "简略结果", valuesList);
-                        } catch (IOException e) {
-                            // TODO 自动生成的 catch 块
-                            e.printStackTrace();
-                        }
-                    }
+            // 找出和文档1最相似的文档，先降序排序
+            docLeftAllSimList = docLeftAllSimList.stream().sorted(Comparator.comparing(SimilarityOutEntity::getWeightedSim, Comparator.reverseOrder())).collect(Collectors.toList());
+            /*  求出每个文档的最大值，如果最大值有多个，只保留10个*/
+            int m = 0;
+            for (SimilarityOutEntity similarityOutEntity : docLeftAllSimList) {
+                if (m >= 10) {
+                    break;
+                }
+                if (similarityOutEntity.getWeightedSim().equals(docLeftAllSimList.get(0).getWeightedSim())) {
+                    /*  加入后期排序*/
+                    sortMaxResultList.add(similarityOutEntity);
+                    m++;
                 }
             }
         }
-        // 不要手残跑来优化，排序的输出要等所有循环结束才可以！！
+        // 排序简略结果
+        sortMaxResultList = sortMaxResultList.stream().sorted(Comparator.comparing(SimilarityOutEntity::getWeightedSim, Comparator.reverseOrder())).collect(Collectors.toList());
         
-        if (isSort) {
-            // 排序简略结果
-            Collections.sort(sortMaxRList);
-            System.out.println("输出" + sortMaxRList.size());
-            for (int b = 0; b < sortMaxRList.size(); b++) {
-                List<Object> valuesList = new ArrayList<>();
-                valuesList.add(sortMaxRList.get(b).getCrib());
-                valuesList.add(sortMaxRList.get(b).getName1());
-                valuesList.add(sortMaxRList.get(b).getName2());
-                valuesList.add(sortMaxRList.get(b).getConSim());
-                valuesList.add(sortMaxRList.get(b).getJaccardSim());
-                valuesList.add(sortMaxRList.get(b).getAvgPicSim());
-                valuesList.add(sortMaxRList.get(b).getSim());
-                try {
-//					CP.CsvWrite(csvFilePath, values, true);
-                    
-                    WE.writeEXCEL(ExcelPath, "简略结果", valuesList);
-                } catch (IOException e) {
-                    // TODO 自动生成的 catch 块
-                    e.printStackTrace();
-                }
-            }
-            
-            // 排序详细结果
-            Collections.sort(results);
-            for (Result p : results) {
-                System.err
-                        .println(p.getName1() + " 与 " + p.getName2() + "\n\tJaccard相似度为：" + df.format(p.getJaccardSim())
-                                + "\n\t余弦相似度为：" + df.format(p.getConSim()) + "\n\t图片相似度为：" + df.format(p.getAvgPicSim())
-                                + "\n\t加权相似度为：" + df.format(p.getSim()) + "\n抄袭判定：" + p.getCrib());
-                // 写入本地的内容
-//				String[] values = { p.getCrib(), p.getName1(), p.getName2(), p.getConSim() + "", p.getJaccardSim() + "",
-//						p.getAvgPicSim() + "", p.getSim() + "" };//写CSV
-                List<Object> valuesList = new ArrayList<>();
-                valuesList.add(p.getCrib());
-                valuesList.add(p.getName1());
-                valuesList.add(p.getName2());
-                valuesList.add(p.getConSim());
-                valuesList.add(p.getJaccardSim());
-                valuesList.add(p.getAvgPicSim());
-                valuesList.add(p.getSim());
-                try {
-//					CP.CsvWrite(csvFilePath, values, true);
-                    WE.writeEXCEL(ExcelPath, "详细结果", valuesList);
-                    valuesList.clear();
-                } catch (IOException e) {
-                    // TODO 自动生成的 catch 块
-                    e.printStackTrace();
-                }
-            }
-            
+        // 排序详细结果
+        detailList = detailList.stream().sorted(Comparator.comparing(SimilarityOutEntity::getWeightedSim, Comparator.reverseOrder())).collect(Collectors.toList());
+        // 去重抄袭名单
+        plagiarizeEntityList = plagiarizeEntityList.stream().collect(
+                Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(PlagiarizeEntity::getDocName))), ArrayList::new));
+        System.out.println("比较完成开始写文件");
+        if (detailList.isEmpty()) {
+            SimilarityOutEntity similarityOutEntity =
+                    SimilarityOutEntity.builder().judgeResult("本次比较共计" + allDocAbsolutePath.size() + "个文件,详细结果将超过" + +sumCount +
+                            "行,防止excel崩溃,此次详细结果不输出,请参考简略结果").build();
+            detailList.add(similarityOutEntity);
         }
-//提取抄袭名单
-        for (Result p : results) {
-            if (p.getSim() > simThre || p.getJaccardSim() > 0.90 || p.getConSim() > 0.95 || p.getAvgPicSim() > 0.90) {
-                simName.add(p.getName1());
-                simName.add(p.getName2());
-            }
-        }
-        for (String str : simName) {
-            List<Object> valuesList = new ArrayList<>();
-            valuesList = Arrays.asList(str);
-            try {
-//				CP.CsvWriteName(csvePath, str, true);
-                WE.writeEXCEL(ExcelPath, "抄袭名单", valuesList);
-//
-            } catch (IOException e) {
-                // TODO 自动生成的 catch 块
-                e.printStackTrace();
-            }
-        }
-        System.err.println("疑似抄袭名单:" + simName.toString());
-        return ExcelPath;
+        EasyExcelUtil.writeExcel(excelPath, detailList, sortMaxResultList, plagiarizeEntityList);
+        return excelPath;
     }
     
     /**
      * 绝对路径中提取文件名,注意FN[1]的获取要与图片处理模块中的新建文件夹路径的获取方法一致！
      */
-    public String[] getFileName(String path) {
+    public static String[] getFileName(String path) {
+        
         File f = new File(path);
-//		String Fname = f.getName()//.replaceAll(" ", ""); // 将双空格替换为“-”
-        String fn = f.getName().replaceAll(" ", ""); // 空格必须替换，否则新建文件夹报错
+        /*  将空格替换为“-”，空格必须替换，否则新建文件夹报错*/
+        String fn = f.getName().replaceAll(" ", "");
         // 获取文件名
-        String temp[] = fn.split("\\.");
-        String fname = "\\" + temp[0];
-        String pf = f.getParent();// 父路径
-        String[] FN = {fn, pf + fname};// 拼接好，方便遍历用
-//		System.err.println("---" + Fname);
+        String[] temp = fn.split("\\.");
+        String fileName = "\\" + temp[0];
+        /*  父路径*/
+        String pf = f.getParent();
+        /*  拼接好，方便遍历用*/
+        String[] FN = {fn, pf + fileName};
         return FN;
+    }
+    
+    public static DocFileEntity getDocFileName(String path) {
+        File docFile = new File(path);
+        String name = docFile.getName();
+        DocFileEntity docEntity = DocFileEntity.builder()
+                .fileName(name)
+                .absolutePath(docFile.getAbsolutePath())
+                /*  将文件名中空格去除，否则新建文件夹报错*/
+                /*  父路径\\无空格无后缀文件名*/
+                .pictureParentPath(docFile.getParent() + "\\" + name.replaceAll(" ", "").split("\\.")[0])
+                .build();
+        return docEntity;
     }
     
     /**
@@ -346,22 +270,28 @@ public class CompareOptimize {
      *
      * @param root 遍历的跟路径
      *
-     * @return 存储有所有文本文件绝对路径的字符串数组
+     * @return List<String> 存储有所有文本文件绝对路径的字符串数组
      */
-    public Vector<String> recursionWord(String root, Vector<String> vecFile) {
+    public static List<String> recursionWord(String root) {
+        List<String> allDocAbsolutePath = new ArrayList<>();
         File file = new File(root);
         File[] subFile = file.listFiles();
-        for (int i = 0; i < subFile.length; i++) {
-            String fileName = subFile[i].getName();
-            if (subFile[i].isDirectory()) { // 判断是文件还是文件夹
-                recursionWord(subFile[i].getAbsolutePath(), vecFile); // 文件夹则递归
-            } else if (fileName.endsWith(".doc") || fileName.endsWith(".docx") || fileName.endsWith(".txt")) {
-                String AP = subFile[i].getAbsolutePath();// 绝对路径
-//				System.out.println(AP);
-                vecFile.add(AP);
+        if (subFile != null) {
+            for (File value : subFile) {
+                String fileName = value.getName();
+                /*  判断是文件还是文件夹*/
+                if (value.isDirectory()) {
+                    /*  文件夹则递归*/
+                    List<String> childPathList = recursionWord(value.getAbsolutePath());
+                    allDocAbsolutePath.addAll(childPathList);
+                } else if (fileName.endsWith(".doc") || fileName.endsWith(".docx") || fileName.endsWith(".txt")) {
+                    /*  绝对路径*/
+                    String absolutePath = value.getAbsolutePath();
+                    allDocAbsolutePath.add(absolutePath);
+                }
             }
         }
-        return vecFile;
+        return allDocAbsolutePath;
     }
     
     /**
@@ -371,20 +301,26 @@ public class CompareOptimize {
      *
      * @return 存储有所有文本文件绝对路径的字符串数组
      */
-    public Vector<String> recursionPhoto(String root, Vector<String> vecFile) {
+    public static List<String> recursionPhoto(String root) {
+        List<String> picturePathList = new ArrayList<>();
         File file = new File(root);
         File[] subFile = file.listFiles();
-        for (int i = 0; i < subFile.length; i++) {
-            String fileName = subFile[i].getName();
-            if (subFile[i].isDirectory()) { // 判断是文件还是文件夹
-                recursionPhoto(subFile[i].getAbsolutePath(), vecFile); // 文件夹则递归
-            } else if (fileName.endsWith(".jpg") || fileName.endsWith(".png") || fileName.endsWith(".jpeg")
-                    || fileName.endsWith(".PNG")) {
-                String AP = subFile[i].getAbsolutePath();// 绝对路径
-//				System.out.println(AP);
-                vecFile.add(AP);
+        if (subFile != null) {
+            for (File value : subFile) {
+                String fileName = value.getName();
+                /*  判断是文件还是文件夹*/
+                if (value.isDirectory()) {
+                    /*  文件夹则递归*/
+                    List<String> childPath = recursionPhoto(value.getAbsolutePath());
+                    picturePathList.addAll(childPath);
+                } else if (fileName.endsWith(".jpg") || fileName.endsWith(".png") || fileName.endsWith(".jpeg")
+                        || fileName.endsWith(".PNG")) {
+                    /*  绝对路径*/
+                    String absolutePath = value.getAbsolutePath();
+                    picturePathList.add(absolutePath);
+                }
             }
         }
-        return vecFile;
+        return picturePathList;
     }
 }
