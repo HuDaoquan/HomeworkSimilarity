@@ -12,6 +12,8 @@ import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import org.apache.poi.ss.formula.functions.T;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import pers.hdq.model.PlagiarizeEntity;
+import pers.hdq.model.SimilarityOutEntity;
 
 
 import java.util.List;
@@ -33,12 +35,11 @@ public class EasyExcelUtil {
     /**
      * 导出 Excel ：一个 sheet，带表头.
      *
-     * @param dataMap  各个Sheet数据
-     * @param filepath 导出的文件名
-     *
-     * @throws Exception 异常
+     * @param detailList,sortMaxResultList,SimilarityOutList 各个Sheet数据
+     * @param filepath                                       导出的文件名
      */
-    public static void writeExcel(String filepath, Map<String, List<T>> dataMap) throws Exception {
+    public static void writeExcel(String filepath, List<SimilarityOutEntity> detailList, List<SimilarityOutEntity> sortMaxResultList,
+                                  List<PlagiarizeEntity> plagiarizeEntityList) {
         //调用工具类,导出excel
         // 头的策略
         WriteCellStyle headWriteCellStyle = new WriteCellStyle();
@@ -59,12 +60,16 @@ public class EasyExcelUtil {
         HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(headWriteCellStyle, contentWriteCellStyle);
         // 这里 需要指定写用哪个class去写，然后写到第一个sheet，名字为模板 然后文件流会自动关闭
         ExcelWriter excelWriter = EasyExcel.write(filepath).excelType(ExcelTypeEnum.XLSX).registerWriteHandler(horizontalCellStyleStrategy).build();
-        AtomicInteger sheetNo = new AtomicInteger();
-        dataMap.forEach((sheetName, dataList) -> {
-            WriteSheet sheetDetail = EasyExcel.writerSheet(sheetNo.get(), sheetName).head(dataList.get(0).getClass()).build();
-            excelWriter.write(dataList, sheetDetail);
-            sheetNo.getAndIncrement();
-        });
+        
+        WriteSheet sheetDetail = EasyExcel.writerSheet(0, "详细结果").head(SimilarityOutEntity.class).build();
+        excelWriter.write(detailList, sheetDetail);
+        
+        WriteSheet sheetMax = EasyExcel.writerSheet(1, "简略结果").head(SimilarityOutEntity.class).build();
+        excelWriter.write(sortMaxResultList, sheetMax);
+        
+        WriteSheet sheetPlagiarize = EasyExcel.writerSheet(2, "抄袭名单").head(SimilarityOutEntity.class).build();
+        excelWriter.write(plagiarizeEntityList, sheetPlagiarize);
+        
         excelWriter.finish();
         
     }

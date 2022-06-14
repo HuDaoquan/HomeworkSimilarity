@@ -52,7 +52,7 @@ public class UIhdq extends JPanel {
     private JTextPane txtpnrnrncsvexcelrn;
     private JCheckBox wordBox;
     private JCheckBox picBox;
-    private JCheckBox sortBox;
+    // private JCheckBox sortBox;
     private static JTextField textPath;
     
     private Double simThre;
@@ -194,14 +194,15 @@ public class UIhdq extends JPanel {
             picBox.setFont(new Font("宋体", Font.PLAIN, 16));
             picBox.setToolTipText("勾选后会对文档中图片进行比较，但会严重降低比较速度，当图片过多时计算会很慢");
             panel2.add(picBox);
-            sortBox = new JCheckBox("打开排序输出");
-            sortBox.setFont(new Font("宋体", Font.PLAIN, 16));
-            sortBox.setToolTipText("勾选后输出查重结果会按相似度降序排序！会增加运算时间,不建议勾选");
-            panel2.add(sortBox);
+            // sortBox = new JCheckBox("打开排序输出");
+            // sortBox.setFont(new Font("宋体", Font.PLAIN, 16));
+            // sortBox.setToolTipText("勾选后输出查重结果会按相似度降序排序！会增加运算时间,不建议勾选");
+            // panel2.add(sortBox);
         }
         comboBox = new JComboBox<String>();
         comboBox.setToolTipText("选择相似度阈值");
         comboBox.addItem("选择相似度下限");
+        comboBox.addItem("20%");
         comboBox.addItem("30%");
         comboBox.addItem("40%");
         comboBox.addItem("50%");
@@ -259,7 +260,7 @@ public class UIhdq extends JPanel {
                 }
                 long startTime = System.currentTimeMillis(); // 获取开始时间
                 System.err.println("相似度计算结果已存入：" + CompareOptimize.calculateFileSimilarity(path, wordBox.isSelected(),
-                        picBox.isSelected(), sortBox.isSelected(), simThre));
+                        picBox.isSelected(), simThre));
                 long endTime = System.currentTimeMillis(); // 获取结束时间
                 System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s"); // 输出程序运行时间
             }
