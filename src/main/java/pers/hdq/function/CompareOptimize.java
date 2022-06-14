@@ -33,11 +33,11 @@ import java.util.stream.Collectors;
 public class CompareOptimize {
     public static void main(String[] args) {
         /*  需要查重的路径*/
-        String path = "D:\\我的文档\\桌面\\测";
+        String path = "D:\\桌面\\查重";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         
-        System.err.println("相似度计算结果已存入：" + calculateFileSimilarity(path, false, false, 0.9));
+        System.err.println("相似度计算结果已存入：" + calculateFileSimilarity(path, true, false, 0.5));
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
         /*  输出程序运行时间*/

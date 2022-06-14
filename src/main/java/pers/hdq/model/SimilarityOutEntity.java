@@ -53,7 +53,7 @@ public class SimilarityOutEntity {
      **/
     @ColumnWidth(10)
     @ExcelProperty(value = "jaccard相似度", index = 3)
-    private String jaccardSim;
+    private Double jaccardSim;
     
     /**
      * 余弦相似度
