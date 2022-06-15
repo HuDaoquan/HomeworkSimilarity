@@ -32,7 +32,7 @@ public class PlagiarizeEntity {
      * 抄袭文件名
      **/
     @ColumnWidth(15)
-    @ExcelProperty(value = "抄袭文件名1", index = 0)
+    @ExcelProperty(value = "抄袭文件名", index = 0)
     private String docName;
     
     
