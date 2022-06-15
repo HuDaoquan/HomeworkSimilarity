@@ -15,7 +15,7 @@ import lombok.ToString;
  * 抄袭名单
  *
  * @Author: HuDaoquan
- * @Email: hudaoquan@enn.cn
+ * @Email: 1455523026@qq.com
  * @Date: 2022/6/13 12:27
  * @Version 1.0
  */

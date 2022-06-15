@@ -13,7 +13,7 @@ import java.util.List;
  * 文本类
  *
  * @Author: HuDaoquan
- * @Email: hudaoquan@enn.cn
+ * @Email: 1455523026@qq.com
  * @Date: 2022/6/14 14:25
  * @Version 1.0
  */
@@ -39,11 +39,6 @@ public class DocFileEntity {
     private String pictureParentPath;
     
     /**
-     * 无数字无子母文本
-     **/
-    private String chineseText;
-    
-    /**
      * 分词结果
      **/
     private List<String> wordList;
@@ -51,6 +46,6 @@ public class DocFileEntity {
     /**
      * 图片hash指纹
      **/
-    private List<String> pictureHash;
+    private List<String> pictureHashList;
     
 }
