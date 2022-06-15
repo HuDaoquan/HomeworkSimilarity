@@ -39,11 +39,6 @@ public class DocFileEntity {
     private String pictureParentPath;
     
     /**
-     * 无数字无子母文本
-     **/
-    private String chineseText;
-    
-    /**
      * 分词结果
      **/
     private List<String> wordList;

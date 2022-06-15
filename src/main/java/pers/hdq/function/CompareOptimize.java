@@ -60,9 +60,7 @@ public class CompareOptimize {
         // Phash算法修改
         SaveHash saveHash = new SaveHash();
         /*  存储所有图片Hash指纹*/
-        Map<String, String> allPictureHashMap = new TreeMap<String, String>();
         /*  文件读取*/
-        FileUtils fileUtils = new FileUtils();
         /*  余弦相似度*/
         CosineSimilarity cosineSimilarity = new CosineSimilarity();
         /*  Jaccard相似度*/
@@ -74,15 +72,13 @@ public class CompareOptimize {
         //导出的excel文档
         String excelPath =
                 path + "\\查重结果".concat(ikFlag.toString() + "智能分词-" + pictureSimFlag.toString() + "图片查重").concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".xlsx");
-        
+        System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         /*  递归遍历目录；获取所有文档绝对路径*/
         List<String> allDocAbsolutePath = recursionWord(path);
         //总计算次数
         int sumCount = (allDocAbsolutePath.size() - 1) * allDocAbsolutePath.size() / 2;
         
-        System.out.println("开始计算文本相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次");
-        //存储所有图片的绝对路径
-        // List<String> allPictureAbsolutePath = new ArrayList<>(allDocAbsolutePath.size());
+        // 存储所有文档
         List<DocFileEntity> allDocEntity = new ArrayList<>(allDocAbsolutePath.size());
         //遍历处理所有文件
         for (String s : allDocAbsolutePath) {
@@ -105,7 +101,7 @@ public class CompareOptimize {
             }
             allDocEntity.add(docEntity);
         }
-        
+        System.out.println("文档读取完成,开始计算相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         // 冒泡排序原理遍历比较文件
         // 已经比较过的文档数量
         int finishDocCount = 0;
@@ -133,9 +129,9 @@ public class CompareOptimize {
                 double textSim = (conSim + jaccardSim) / 2;
                 String judgeResult = "";
                 /*  存图片相似度*/
-                double avgPicSim = 0;
+                double avgPicSim = 0D;
                 /*  存最终结果*/
-                double weightedSim = 0;
+                double weightedSim;
                 if (pictureSimFlag) {
                     // 文档1中每张图片与文档2中所有图片相似度的最大值的集合
                     List<Double> docLeftAllPictureMaxSim = new ArrayList<>(docLeft.getPictureHash().size());
@@ -150,9 +146,9 @@ public class CompareOptimize {
                             }
                         }
                         // 求出文档1中某张图片与文档2中所有图片相似度的最大值
-                        double docLeftPictureKSimMax =
+                        double docLeftOnePictureSimMax =
                                 leftDocPictureSimList.stream().max(Comparator.comparing(Double::doubleValue)).orElse(0D);
-                        docLeftAllPictureMaxSim.add(docLeftPictureKSimMax);
+                        docLeftAllPictureMaxSim.add(docLeftOnePictureSimMax);
                     }
                     // 求出文档1的所有图片相似度均值作为本次的图片相似度
                     avgPicSim = docLeftAllPictureMaxSim.stream().collect(Collectors.averagingDouble(Double::doubleValue));
@@ -196,7 +192,7 @@ public class CompareOptimize {
                 
                 docLeftAllSimList.add(cellSimEntity);
             }
-            if (allDocEntity.size() < 200) {
+            if (allDocEntity.size() < 500) {
                 detailList.addAll(docLeftAllSimList);
             }
             
@@ -231,6 +227,7 @@ public class CompareOptimize {
                             "行,防止excel崩溃,此次详细结果不输出,请参考简略结果").build();
             detailList.add(similarityOutEntity);
         }
+        System.out.println("相似度计算完成,开始输出excel,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         EasyExcelUtil.writeExcel(excelPath, detailList, sortMaxResultList, plagiarizeEntityList);
         return excelPath;
     }

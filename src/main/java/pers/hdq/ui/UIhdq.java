@@ -42,14 +42,7 @@ import pers.hdq.function.CompareOptimize;
 public class UIhdq extends JPanel {
     private static final long serialVersionUID = 1289965392854758573L;
     private String path = "";
-    private JPanel panel1;
-    private JScrollPane scrollPane1;
     private static JTextArea docLocationTextArea;
-    private JPanel panel2;
-    private JButton searchButton;
-    private JLabel label1;
-    private JPanel tableShowJPanel;
-    private JTextPane txtpnrnrncsvexcelrn;
     private JCheckBox wordBox;
     private JCheckBox picBox;
     // private JCheckBox sortBox;
@@ -63,17 +56,17 @@ public class UIhdq extends JPanel {
     }
     
     private void initComponents() {
-        panel1 = new JPanel();
+        JPanel panel1 = new JPanel();
         panel1.setToolTipText("");
-        scrollPane1 = new JScrollPane();
+        JScrollPane scrollPane1 = new JScrollPane();
         docLocationTextArea = new JTextArea();
         Font x = new Font("仿宋", 0, 15);
         docLocationTextArea.setFont(x);
         docLocationTextArea.setToolTipText("查重结果");
-        label1 = new JLabel();
+        JLabel label1 = new JLabel();
         label1.setFont(new Font("仿宋", Font.BOLD, 14));
         label1.setToolTipText("");
-        tableShowJPanel = new JPanel();
+        JPanel tableShowJPanel = new JPanel();
         Border border = new javax.swing.border.CompoundBorder(new javax.swing.border.TitledBorder(
                 new javax.swing.border.EmptyBorder(0, 0, 0, 0), "使用中如有疑问，请联系1455523026@qq.com",
                 javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.BOTTOM,
@@ -136,7 +129,7 @@ public class UIhdq extends JPanel {
             }
         }
         add(tableShowJPanel);
-        txtpnrnrncsvexcelrn = new JTextPane();
+        JTextPane txtpnrnrncsvexcelrn = new JTextPane();
         txtpnrnrncsvexcelrn.setBackground(SystemColor.controlHighlight);
         txtpnrnrncsvexcelrn.setForeground(Color.BLACK);
         txtpnrnrncsvexcelrn.setFont(new Font("仿宋", Font.BOLD, 16));
@@ -158,7 +151,7 @@ public class UIhdq extends JPanel {
         label.setFont(new Font("仿宋", Font.PLAIN, 14));
         label.setBounds(10, 16, 145, 29);
         tableShowJPanel.add(label);
-        searchButton = new JButton();
+        JButton searchButton = new JButton();
         searchButton.setBounds(598, 14, 145, 33);
         tableShowJPanel.add(searchButton);
         searchButton.setFont(new Font("仿宋", Font.BOLD, 16));
@@ -179,7 +172,7 @@ public class UIhdq extends JPanel {
         });
         // ---- searchButton ----
         searchButton.setText("选择查重路径");
-        panel2 = new JPanel();
+        JPanel panel2 = new JPanel();
         panel2.setBounds(608, 74, 132, 193);
         tableShowJPanel.add(panel2);
         // ======== panel2 ========
