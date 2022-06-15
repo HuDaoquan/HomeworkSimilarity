@@ -25,7 +25,7 @@ public class SaveHash {
      *
      * @return
      */
-    public String getFeatureValue(String imagePath) {
+    public static String getFeatureValue(String imagePath) {
         // 缩小尺寸，简化色彩
         int[][] grayMatrix = getGrayPixel(imagePath, 32, 32);
         // 计算DCT
@@ -66,7 +66,7 @@ public class SaveHash {
      *
      * @return
      */
-    public int[][] getGrayPixel(String imagePath, int width, int height) {
+    public static int[][] getGrayPixel(String imagePath, int width, int height) {
         BufferedImage bi = null;
         try {
             bi = resizeImage(imagePath, width, height, BufferedImage.TYPE_INT_RGB);
@@ -101,7 +101,7 @@ public class SaveHash {
      * @return
      * @throws IOException
      */
-    public BufferedImage resizeImage(String srcImgPath, int width, int height, int imageType) throws IOException {
+    public static BufferedImage resizeImage(String srcImgPath, int width, int height, int imageType) throws IOException {
         File srcFile = new File(srcImgPath);
         BufferedImage srcImg = ImageIO.read(srcFile);
         BufferedImage buffImg = null;
@@ -114,8 +114,8 @@ public class SaveHash {
      * 用于计算pHash的相似度<br>
      * 相似度为1时，图片最相似
      *
-     * @param str1
-     * @param str2
+     * @param hash1
+     * @param hash2
      *
      * @return
      */
@@ -165,15 +165,17 @@ public class SaveHash {
      *
      * @return 变换后的矩阵数组
      */
-    public int[][] DCT(int[][] pix, int n) {
+    public static int[][] DCT(int[][] pix, int n) {
         double[][] iMatrix = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 iMatrix[i][j] = (pix[i][j]);
             }
         }
-        double[][] quotient = coefficient(n); // 求系数矩阵
-        double[][] quotientT = transposingMatrix(quotient, n); // 转置系数矩阵
+        // 求系数矩阵
+        double[][] quotient = coefficient(n);
+        // 转置系数矩阵
+        double[][] quotientT = transposingMatrix(quotient, n);
         double[][] temp = new double[n][n];
         temp = matrixMultiply(quotient, iMatrix, n);
         iMatrix = matrixMultiply(temp, quotientT, n);
@@ -217,7 +219,7 @@ public class SaveHash {
      * @return 转置后的矩阵
      */
     private static double[][] transposingMatrix(double[][] matrix, int n) {
-        double nMatrix[][] = new double[n][n];
+        double[][] nMatrix = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 nMatrix[i][j] = matrix[j][i];
@@ -235,8 +237,8 @@ public class SaveHash {
      *
      * @return 结果矩阵
      */
-    private double[][] matrixMultiply(double[][] A, double[][] B, int n) {
-        double nMatrix[][] = new double[n][n];
+    private static double[][] matrixMultiply(double[][] A, double[][] B, int n) {
+        double[][] nMatrix = new double[n][n];
         int t = 0;
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {

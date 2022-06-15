@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Date;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -30,6 +31,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.border.Border;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import pers.hdq.function.CompareOptimize;
 
 /**
@@ -50,6 +52,8 @@ public class UIhdq extends JPanel {
     
     private Double simThre;
     private JComboBox<String> comboBox;
+    // 查重模式 1、所有文档两两比较；2、今年与往年比较（要求所选路径中必须有一个”今年“文件夹、一个“往年”文件夹）
+    private JComboBox<String> queryModeBox;
     
     public UIhdq() {
         initComponents();
@@ -134,9 +138,10 @@ public class UIhdq extends JPanel {
         txtpnrnrncsvexcelrn.setForeground(Color.BLACK);
         txtpnrnrncsvexcelrn.setFont(new Font("仿宋", Font.BOLD, 16));
         txtpnrnrncsvexcelrn.setEditable(false);
-        txtpnrnrncsvexcelrn.setText("使用说明：\r\n  1.查重前请将需要两两比较的文档放入同一文件夹中，然后点击“选择查重路径”按钮选择该文件夹，点击“开始查重”按钮，开始查重；"
-                + "\n  2.右侧有4个打开辅助选项，鼠标悬停其上查看功能；\r\n  3.查重结果会存储于所选文件夹中以“查重结果”开头的Excel表格中(文件名中的数字表示查重时间，精确到秒)；"
-                + "\n  4.结果文件中的“简略结果”表只列出每个文件及其最相似文件的结果，详细结果表列出全部结果；抄袭名单会列出相似度超过您在右侧选择的阈值(默认90%）的名单。");
+        txtpnrnrncsvexcelrn.setText("使用说明：\r\n  1.查重前请将待查重文档放入文件夹中，然后点击“选择查重路径”按钮选择该文件夹，点击“开始查重”按钮，开始查重；" +
+                "\n  2.查重模式1:将对所选路径下所有文档两两比较;  模式2:所选路径中必须有一个”今年“、一个“往年”目录分别存今年和往年文档,今年文档会两两比较（相比模式1少了往年文档互相比较的过程)；" +
+                "\n  3.查重结果存储于所选文件夹中以“查重结果”开头的Excel表格中；" +
+                "\n  4.“简略结果”表列出每个文件及其最相似文件，详细结果表列出全部结果；抄袭名单会列出相似度超过在选定阈值的文件名。");
         txtpnrnrncsvexcelrn.setToolTipText("使用说明");
         txtpnrnrncsvexcelrn.setBounds(10, 55, 559, 186);
         tableShowJPanel.add(txtpnrnrncsvexcelrn);
@@ -205,6 +210,13 @@ public class UIhdq extends JPanel {
         comboBox.addItem("90%");
         comboBox.addItem("95%");
         
+        queryModeBox = new JComboBox<String>();
+        queryModeBox.setToolTipText("查重模式 \n1、所有文档两两比较；\n2、今年与往年比较（所选路径中必须有一个”今年“文件夹、一个“往年”文件夹）");
+        queryModeBox.addItem("选择查重模式");
+        queryModeBox.addItem("模式1两两");
+        queryModeBox.addItem("模式2今年与往年");
+        
+        
         JButton beginButton = new JButton("开始查重");
         beginButton.setForeground(Color.BLACK);
         beginButton.setFont(new Font("仿宋", Font.BOLD, 20));
@@ -213,7 +225,7 @@ public class UIhdq extends JPanel {
             
             @Override
             public void mouseClicked(MouseEvent e) {
-                docLocationTextArea.setText("正在计算：");
+                docLocationTextArea.setText("开始处理：\n");
                 docLocationTextArea.paintImmediately(docLocationTextArea.getBounds());
                 if (index % 2 == 0) {
                     docLocationTextArea.setForeground(Color.BLACK); // 黑色
@@ -221,8 +233,10 @@ public class UIhdq extends JPanel {
                     docLocationTextArea.setForeground(Color.magenta); // 紫色
                 }
                 index++;
-//获取相似度阈值
+                
+                //获取相似度阈值
                 String threshold = (String) comboBox.getSelectedItem();
+                
                 switch (threshold) {
                     case "20%":
                         simThre = 0.2;
@@ -255,13 +269,27 @@ public class UIhdq extends JPanel {
                         simThre = 0.90;
                 }
                 long startTime = System.currentTimeMillis(); // 获取开始时间
-                System.err.println("相似度计算结果已存入：" + CompareOptimize.calculateFileSimilarity(path, wordBox.isSelected(),
-                        picBox.isSelected(), simThre));
-                long endTime = System.currentTimeMillis(); // 获取结束时间
-                System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s"); // 输出程序运行时间
+                String excelPath =
+                        path + "\\查重结果".concat("智能分词-" + "图片查重-" + (String) queryModeBox.getSelectedItem()).concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".xlsx");
+                try {
+                    switch ((String) queryModeBox.getSelectedItem()) {
+                        case "模式2今年与往年":
+                            CompareOptimize.getSimilarityMode2(path, wordBox.isSelected(), picBox.isSelected(), simThre, excelPath);
+                            break;
+                        default:
+                            CompareOptimize.getSimilarityMode1(path, wordBox.isSelected(), picBox.isSelected(), simThre, excelPath);
+                        
+                    }
+                    long endTime = System.currentTimeMillis(); // 获取结束时间
+                    System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s"); // 输出程序运行时间
+                } catch (Exception ex) {
+                    System.out.println("计算出错,请检查后重试:" + ex);
+                }
+                
             }
         });
         panel2.add(comboBox);
+        panel2.add(queryModeBox);
         panel2.add(beginButton);
     }
     

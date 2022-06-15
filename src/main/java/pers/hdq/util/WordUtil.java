@@ -19,6 +19,15 @@ import java.io.IOException;
  * @Version 1.0
  */
 public class WordUtil {
+    /**
+     * 生成1000个大文档
+     *
+     * @param args
+     *
+     * @return
+     * @author HuDaoquan
+     * @date 2022/6/15 15:34
+     **/
     public static void main(String[] args) throws Exception {
         
         FileOutputStream out = null;

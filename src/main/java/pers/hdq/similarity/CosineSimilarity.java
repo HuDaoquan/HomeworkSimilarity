@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import pers.hdq.ik.IKWordSegmentation;
+import pers.hdq.util.IKUtils;
 
 /**
  * @author HuDaoquan
@@ -104,7 +104,6 @@ public class CosineSimilarity {
             int temp[] = paramMap.get(key);
             result += (temp[0] * temp[1]);
         }
-//	        System.err.println("result-----------"+result);
         return result;
     }
     
@@ -119,11 +118,12 @@ public class CosineSimilarity {
     public static void main(String[] args) {
         String s1 = "我喜欢文学文学文学文学文学文学文学文学文学，喜欢地理，也喜欢化学";
         String s2 = "我不喜欢文学文学文学文学文学文学文学文学文学，喜欢化学";
-        IKWordSegmentation IK = new IKWordSegmentation();
-        List<String> list1 = IK.segStr(s1, false); // 使用IK分词器分词
-        List<String> list2 = IK.segStr(s2, false);
+        // IK分词
+        
+        List<String> list1 = IKUtils.segStr(s1, false);
+        List<String> list2 = IKUtils.segStr(s2, false);
         CosineSimilarity similarity = new CosineSimilarity();
-        double sim_value = similarity.sim(list1, list2);
-        System.out.println(list1 + "\n与\n" + list2 + "\n的余弦相似度为：" + sim_value);
+        double simValue = similarity.sim(list1, list2);
+        System.out.println(list1 + "\n与\n" + list2 + "\n的余弦相似度为：" + simValue);
     }
 }

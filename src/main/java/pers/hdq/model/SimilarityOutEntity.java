@@ -1,5 +1,6 @@
 package pers.hdq.model;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.write.style.ColumnWidth;
 import com.alibaba.excel.annotation.write.style.ContentRowHeight;
@@ -74,4 +75,10 @@ public class SimilarityOutEntity {
     @ColumnWidth(10)
     @ExcelProperty(value = "加权相似度", index = 6)
     private String weightedSim;
+    
+    /**
+     * 加权相似度数值型
+     **/
+    @ExcelIgnore
+    private Double weightedSimDouble;
 }

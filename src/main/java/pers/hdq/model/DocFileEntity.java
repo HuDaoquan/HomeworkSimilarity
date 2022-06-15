@@ -46,6 +46,6 @@ public class DocFileEntity {
     /**
      * 图片hash指纹
      **/
-    private List<String> pictureHash;
+    private List<String> pictureHashList;
     
 }
