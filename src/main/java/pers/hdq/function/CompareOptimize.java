@@ -112,6 +112,7 @@ public class CompareOptimize {
                 DocFileEntity docRight = allDocEntityList.get(j);
                 // 比较文本相似度
                 SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList, sumCount, finishDocCount);
+                finishDocCount = cellSimEntity.getFinishDocCount();
                 docLeftAllSimList.add(cellSimEntity);
             }
             if (sumCount <= 100000) {
@@ -237,6 +238,7 @@ public class CompareOptimize {
                 DocFileEntity docRight = thisYearDocEntityList.get(j);
                 // 比较两个文档相似度，返回相似度实体
                 SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList, sumCount, finishDocCount);
+                finishDocCount = cellSimEntity.getFinishDocCount();
                 docLeftAllSimList.add(cellSimEntity);
             }
             //往年文档
@@ -245,6 +247,7 @@ public class CompareOptimize {
                 DocFileEntity docRight = historyYearDocEntityList.get(j);
                 // 比较两个文档相似度，返回相似度实体
                 SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList, sumCount, finishDocCount);
+                finishDocCount = cellSimEntity.getFinishDocCount();
                 docLeftAllSimList.add(cellSimEntity);
             }
             if (sumCount <= 100000) {
@@ -355,6 +358,7 @@ public class CompareOptimize {
                 .weightedSim(numFormat.format(weightedSim))
                 .rightDocName(docRight.getAbsolutePath())
                 .weightedSimDouble(weightedSim)
+                .finishDocCount(finishDocCount)
                 .build();
         
     }

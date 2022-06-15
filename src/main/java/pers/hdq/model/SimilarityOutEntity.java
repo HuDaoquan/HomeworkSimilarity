@@ -81,4 +81,10 @@ public class SimilarityOutEntity {
      **/
     @ExcelIgnore
     private Double weightedSimDouble;
+    
+    /**
+     * 已比较完成的次数
+     **/
+    @ExcelIgnore
+    private Integer finishDocCount;
 }
