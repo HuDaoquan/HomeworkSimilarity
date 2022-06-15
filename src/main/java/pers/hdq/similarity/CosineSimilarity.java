@@ -15,8 +15,6 @@ import pers.hdq.util.IKUtils;
  * @date 2019年7月1日 下午9:40:56
  */
 public class CosineSimilarity {
-    Map<String, int[]> vectorMap = new HashMap<String, int[]>();
-    int[] tempArray = null;
     
     /**
      * 词频统计
@@ -24,8 +22,10 @@ public class CosineSimilarity {
      * @param content1
      * @param content2
      */
-    public void wordCount(List<String> content1, List<String> content2) {
-        vectorMap.clear();
+    public static Map<String, int[]> wordCount(List<String> content1, List<String> content2) {
+        int[] tempArray;
+        Map<String, int[]> vectorMap = new HashMap<>();
+        // vectorMap.clear();
         for (int i = 0; i < content1.size(); i++) {
             // content1.get(i)分好词后的第i个词
             if (vectorMap.containsKey(content1.get(i))) { // 判断第i个词有没有在vectorMap中，如果在则在加一 实现统计词频
@@ -47,6 +47,7 @@ public class CosineSimilarity {
                 vectorMap.put(content2.get(i), tempArray);
             }
         }
+        return vectorMap;
     }
     
     /**
@@ -57,8 +58,8 @@ public class CosineSimilarity {
      *
      * @return double型结果
      */
-    public double sim(List<String> content1, List<String> content2) {
-        wordCount(content1, content2);
+    public static double sim(List<String> content1, List<String> content2) {
+        Map<String, int[]> vectorMap = wordCount(content1, content2);
         double result = 0D;
         if (sqrtMulti(vectorMap) == 0) {
             return result;
@@ -116,14 +117,14 @@ public class CosineSimilarity {
      * @author HuDaoquan
      */
     public static void main(String[] args) {
-        String s1 = "我喜欢文学文学文学文学文学文学文学文学文学，喜欢地理，也喜欢化学";
-        String s2 = "我不喜欢文学文学文学文学文学文学文学文学文学，喜欢化学";
+        String s1 = "微软是一家美国公司，是世界级公司";
+        String s2 = "阿里是一家中国公司，是中国的巨头公司";
         // IK分词
         
         List<String> list1 = IKUtils.segStr(s1, false);
         List<String> list2 = IKUtils.segStr(s2, false);
         CosineSimilarity similarity = new CosineSimilarity();
-        double simValue = similarity.sim(list1, list2);
+        double simValue = sim(list1, list2);
         System.out.println(list1 + "\n与\n" + list2 + "\n的余弦相似度为：" + simValue);
     }
 }
