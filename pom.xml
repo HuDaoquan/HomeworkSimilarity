@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.hdq</groupId>
     <artifactId>WordSim</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>WordSim</name>
 
@@ -93,8 +93,8 @@
         </dependency>
     </dependencies>
     <build>
-        <!-- finalName指定打包生成的文件名，默认为工程名-版本号 -->
-        <finalName>web01</finalName>
+        <!-- 产生的构件的文件名，默认值是${artifactId}-${version}。 -->
+        <finalName>${artifactId}</finalName>
 
         <plugins>
             <!-- 指定jdk版本 -->

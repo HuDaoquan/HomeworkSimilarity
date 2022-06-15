@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * easyExcel 工具类(仅导出)中可自定义样式格式等
  *
  * @Author: HuDaoquan
- * @Email: hudaoquan@enn.cn
+ * @Email: 1455523026@qq.com
  * @Date: 2021/5/22 14:18
  * @Version 1.0
  */
