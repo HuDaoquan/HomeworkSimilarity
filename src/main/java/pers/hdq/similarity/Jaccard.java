@@ -1,7 +1,10 @@
 package pers.hdq.similarity;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import pers.hdq.util.IKUtils;
@@ -21,7 +24,7 @@ public class Jaccard {
         List<String> list1 = IKUtils.segStr(s1, true);
         List<String> list2 = IKUtils.segStr(s2, true);
         
-        System.out.println(list1 + "\n与\n" + list2 + "\n的余弦相似度为：" + Jaccard.jaccardSimilarity(list1, list2));
+        System.out.println(list1 + "\n与\n" + list2 + "\n的杰卡德相似度为：" + Jaccard.jaccardSimilarity(list1, list2));
         System.out.println();
     }
     
@@ -32,22 +35,37 @@ public class Jaccard {
      * @param list1 分词分好的List集合2
      */
     public static double jaccardSimilarity(List<String> list1, List<String> list2) {
-        Set<String> set1 = new HashSet<>();
-        // 求并集
-        set1.addAll(list1);
-        set1.addAll(list2);
-        if (set1.isEmpty()) {
+        //中间值
+        Map<String, String> list2Map = new HashMap<>();
+        // 并集
+        Map<String, String> unionMap = new HashMap<>();
+        // 交集
+        Map<String, String> intersectionMap = new HashMap<>();
+        
+        list2.forEach(i2 -> {
+            list2Map.put(i2, i2);
+            unionMap.put(i2, i2);
+        });
+        list1.forEach(i1 -> {
+            //如果不为空，则证明list1和list2都拥有该数据，交集
+            if (list2Map.get(i1) != null) {
+                intersectionMap.put(i1, i1);
+            }
+            // 并集中没有它，就要添加到并集中
+            unionMap.putIfAbsent(i1, i1);
+        });
+        
+        
+        if (unionMap.isEmpty()) {
             return 0;
         }
-        // 求交集
-        Set<String> set2 = new HashSet<>(list2);
-        set2.retainAll(list1);
         
         //杰卡德相似度= 交集/并集
-        double j = set2.size() / set1.size();
+        double j = intersectionMap.size() / (double) unionMap.size();
         // 清空，防止后续调用形成干扰
-        set1.clear();
-        set2.clear();
+        list2Map.clear();
+        unionMap.clear();
+        intersectionMap.clear();
         return j;
     }
 }

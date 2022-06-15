@@ -31,10 +31,6 @@ import java.util.stream.Collectors;
  */
 public class CompareOptimize {
     
-    /**
-     * 余弦相似度计算
-     **/
-    static CosineSimilarity cosineSimilarity = new CosineSimilarity();
     
     /**
      * 将小数格式化为百分数
@@ -50,7 +46,6 @@ public class CompareOptimize {
                 path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(DateFormatUtils.format(new Date(),
                         "yyyyMMddHHmmss")).concat(".xlsx");
         getSimilarityMode2(path, true, false, 0.5, excelPath);
-        System.err.println("相似度计算结果已存入：" + excelPath);
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
         /*  输出程序运行时间*/
@@ -292,8 +287,8 @@ public class CompareOptimize {
                                                       int finishDocCount) {
         
         /*  余弦相似度*/
-        double conSim = cosineSimilarity.sim(docLeft.getWordList(), docRight.getWordList());
-        // 杰卡德相似度
+        double conSim = CosineSimilarity.sim(docLeft.getWordList(), docRight.getWordList());
+        // // 杰卡德相似度
         double jaccardSim = Jaccard.jaccardSimilarity(docLeft.getWordList(), docRight.getWordList());
         double textSim = (conSim + jaccardSim) / 2;
         // 判断结果
@@ -360,6 +355,7 @@ public class CompareOptimize {
                 .weightedSimDouble(weightedSim)
                 .finishDocCount(finishDocCount)
                 .build();
+        
         
     }
     
