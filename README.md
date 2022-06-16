@@ -3,6 +3,8 @@
 ## 项目描述:
 
 本地作业查重系统。程序入口文件为src/main/java/pers.hdq.ui包中的UIhdq.java 文件。这是一个图形化界面。
+![image](https://github.com/luoyeqga/HomeworkSimilarity/blob/dev1.0.2/img.png)
+
 ![img.png](img.png)
 实现对本地某一目录下所有word文档和txt文档进行两两之间的相似度计算。并将完整结果简略结果以及抄袭名单输出为excel文件。  
 图片相似度采用PHash算法，文字相似度采用jaccard相似度和余弦相似度结合进行计算。  
