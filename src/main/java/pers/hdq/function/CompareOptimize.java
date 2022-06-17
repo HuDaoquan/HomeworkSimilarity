@@ -1,16 +1,16 @@
 package pers.hdq.function;
 
 import org.apache.commons.lang.time.DateFormatUtils;
-import pers.hdq.util.IKUtils;
 import pers.hdq.model.DocFileEntity;
 import pers.hdq.model.PlagiarizeEntity;
 import pers.hdq.model.SimilarityOutEntity;
 import pers.hdq.picture.SaveHash;
 import pers.hdq.similarity.CosineSimilarity;
 import pers.hdq.similarity.Jaccard;
-import pers.hdq.util.FileUtils;
-import pers.hdq.util.WordPicture;
 import pers.hdq.util.EasyExcelUtil;
+import pers.hdq.util.FileUtils;
+import pers.hdq.util.IKUtils;
+import pers.hdq.util.WordPicture;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -39,13 +39,13 @@ public class CompareOptimize {
     
     public static void main(String[] args) throws Exception {
         /*  需要查重的路径*/
-        String path = "D:\\桌面\\查重大文本";
+        String path = "D:\\桌面\\查重图片";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         String excelPath =
                 path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(DateFormatUtils.format(new Date(),
                         "yyyyMMddHHmmss")).concat(".xlsx");
-        getSimilarityMode2(path, true, false, 0.5, excelPath);
+        getSimilarityMode1(path, true, true, 0.5, excelPath);
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
         /*  输出程序运行时间*/
@@ -77,7 +77,6 @@ public class CompareOptimize {
         List<DocFileEntity> allDocEntityList = new ArrayList<>(allDocAbsolutePath.size());
         //遍历处理所有文件
         for (String s : allDocAbsolutePath) {
-            // allPictureAbsolutePath.addAll(oneDocPicturePath);
             //获取文档实体
             allDocEntityList.add(getDocEntity(s, pictureSimFlag, ikFlag));
         }
@@ -376,24 +375,17 @@ public class CompareOptimize {
         DocFileEntity docEntity = DocFileEntity.builder()
                 .fileName(name)
                 .absolutePath(docFile.getAbsolutePath())
-                /*  将文件名中空格去除，否则新建文件夹报错*/
                 /*  父路径\\无空格无后缀文件名*/
-                .pictureParentPath(docFile.getParent() + "\\" + name.replaceAll(" ", "").split("\\.")[0])
+                // .pictureParentPath(docFile.getParent() + "\\" + name.replaceAll(" ", "").split("\\.")[0])
                 .build();
-        //将每个文档的文本返回
-        /*  去除数字和字母*/
-        /*  使用IK分词器分词*/
-        docEntity.setWordList(IKUtils.segStr(FileUtils.readFile(path).replaceAll("[0-9a-zA-Z]", ""),
-                ikFlag));
+        //将每个文档的文本分词后返回,去除数字和字母，使用IK分词器分词
+        docEntity.setWordList(IKUtils.segStr(FileUtils.readFile(path).replaceAll("[0-9a-zA-Z]", ""), ikFlag));
         // 比较图片相似度
         if (pictureSimFlag) {
-            /*  将图片写入本地文档，并返回绝对路径*/
-            List<String> oneDocPicturePathList = WordPicture.getWordPicture(docEntity);
-            List<String> oneDocPictureHashList = new ArrayList<>(oneDocPicturePathList.size());
-            // 计算图片的hash指纹
-            oneDocPicturePathList.forEach(pictureFile -> oneDocPictureHashList.add(SaveHash.getFeatureValue(pictureFile)));
+            // 计算文档中图片的hash指纹
+            List<String> oneDocPictureHashList = WordPicture.getWordPicture(docEntity);
             docEntity.setPictureHashList(oneDocPictureHashList);
-            System.out.println(docEntity.getFileName() + "的图片数量为:" + oneDocPicturePathList.size());
+            System.out.println(docEntity.getFileName() + "的图片数量为:" + oneDocPictureHashList.size());
         }
         return docEntity;
     }
