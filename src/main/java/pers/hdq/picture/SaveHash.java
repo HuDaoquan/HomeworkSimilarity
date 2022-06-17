@@ -92,7 +92,7 @@ public class SaveHash {
     /**
      * 缩放图片尺寸
      *
-     * @param srcImgPath
+     * @param srcFile
      * @param width
      * @param height
      * @param imageType

@@ -15,10 +15,17 @@ import pers.hdq.util.WordPicture;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +37,36 @@ import java.util.stream.Collectors;
  * @Version 1.0
  */
 public class CompareOptimize {
+    /**
+     * 线程池，核心线程数1，最大线程数4
+     **/
+    private static ExecutorService threadPool = new ThreadPoolExecutor(8, 16, 3, TimeUnit.SECONDS,
+            new LinkedTransferQueue<>(), Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+    
+   /*
+   corePoolSize：当在方法execute(Runnable)中提交了一个新任务，并且运行的线程少于 corePoolSize 时，即使其他工作线程处于空闲状态，也会创建一个新线程来处理该请求。
+   如果运行的线程数多于 corePoolSize 但少于 maximumPoolSize，则仅当队列已满时才会创建新线程
+    maximumPoolSize：最大线程数：线程池中最多允许创建 maximumPoolSize 个线程
+    keepAliveTime：存活时间：如果经过 keepAliveTime 时间后，超过核心线程数的线程还没有接受到新的任务，那就回收
+    unit：keepAliveTime 的时间单位
+    workQueue：存放待执行任务的队列：当提交的任务数超过核心线程数大小后，再提交的任务就存放在这里。它仅仅用来存放被 execute 方法提交的 Runnable 任务
+        JDK7提供了7个阻塞队列。分别是：
+            ArrayBlockingQueue ：一个由数组结构组成的有界阻塞队列。先进先出（FIFO）
+            LinkedBlockingQueue ：一个由链表结构组成的有界阻塞队列。先进先出（FIFO）
+            PriorityBlockingQueue ：一个支持优先级排序的无界阻塞队列。
+            DelayQueue：基于PriorityQueue实现的支持延时获取元素的阻塞队列。
+            SynchronousQueue：一个不存储元素的阻塞队列。
+            LinkedTransferQueue：一个由链表结构组成的无界阻塞队列。先进先出（FIFO）
+            LinkedBlockingDeque：一个由链表结构组成的双向阻塞队列。支持FIFO和FILO两种操作方式
+
+    threadFactory：线程工程：用来创建线程工厂。比如这里面可以自定义线程名称
+    handler： 拒绝策略：当队列里面放满了任务、最大线程数的线程都在工作时，这时继续提交的任务线程池就处理不了，应该执行怎么样的拒绝策略。
+   //四种拒绝策略
+            new ThreadPoolExecutor.AbortPolicy() // 不执行新任务，直接抛出异常，提示线程池已满,默认策略
+            new ThreadPoolExecutor.CallerRunsPolicy() // 哪来的去哪里！由调用线程处理该任务
+            new ThreadPoolExecutor.DiscardPolicy() //不执行新任务，也不抛出异常
+            new ThreadPoolExecutor.DiscardOldestPolicy() //丢弃队列最前面的任务，然后重新提交被拒绝的任务。
+    */
     
     
     /**
@@ -67,22 +104,39 @@ public class CompareOptimize {
      **/
     public static void getSimilarityMode1(String path, Boolean ikFlag, Boolean pictureSimFlag,
                                           Double threshold, String excelPath) throws Exception {
-        
+    
         System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         /*  递归遍历目录；获取所有文档绝对路径*/
         List<String> allDocAbsolutePath = recursionWord(path);
         //总计算次数
         int sumCount = (allDocAbsolutePath.size() - 1) * allDocAbsolutePath.size() / 2;
         // 存储所有文档
-        List<DocFileEntity> allDocEntityList = new ArrayList<>(allDocAbsolutePath.size());
+        List<DocFileEntity> allDocEntityList = Collections.synchronizedList(new ArrayList<>(allDocAbsolutePath.size()));
+    
+        CountDownLatch cdl = new CountDownLatch(allDocAbsolutePath.size());
         //遍历处理所有文件
         for (String s : allDocAbsolutePath) {
-            //获取文档实体
-            allDocEntityList.add(getDocEntity(s, pictureSimFlag, ikFlag));
+            Runnable run = new Runnable() {
+                @Override
+                public void run() {
+                    allDocEntityList.add(getDocEntity(s, pictureSimFlag, ikFlag));
+                    //计数器递减
+                    cdl.countDown();
+                }
+            };
+            //执行线程
+            threadPool.execute(run);
+        }
+    
+        //线程执行完后再执行主线程
+        try {
+            cdl.await();
+        } catch (InterruptedException e) {
+            System.out.println("阻塞子线程中断异常:" + e);
         }
         System.out.println("文档读取完成,开始计算相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-        
-        
+    
+    
         int detailSize = sumCount;
         if (sumCount > 100000) {
             detailSize = 1;
