@@ -3,9 +3,7 @@
 ## 项目描述:
 
 本地作业查重系统。程序入口文件为src/main/java/pers.hdq.ui包中的UIhdq.java 文件。这是一个图形化界面。
-![image](https://github.com/luoyeqga/HomeworkSimilarity/blob/dev1.0.2/img.png)
-
-![img.png](img.png)
+![img_1.png](img_1.png)
 实现对本地某一目录下所有word文档和txt文档进行两两之间的相似度计算。并将完整结果简略结果以及抄袭名单输出为excel文件。  
 图片相似度采用PHash算法，文字相似度采用jaccard相似度和余弦相似度结合进行计算。  
 程序已经生成了32位和64位exe文件，直接解压后选择作业查重x32和作业查重x64文件夹即可运行（下载链接：链接: https://pan.baidu.com/s/1PA1x786sXzsr0J4cJI5z-A 提取码: umfm）。
@@ -27,6 +25,16 @@
     查询多个大文本时,请在jvm启动参数中调大内存限制 -Xmx4096m -Xms1024m   (具体数值依据电脑配置/文档字数/文档数量等决定)
 
 ## 版本变更记录:
+
+### dev1.0.3 更新时间2022-06-18
+
+> 1.新增WordUtil工具类批量生成大文档;以便开发者测试用
+>
+> 2.新增多线程读取文件和多线程比较的逻辑;线程池corePoolSize和maximumPoolSize由代码读取到的CPU核数决定;待执行任务的队列由文本量决定
+>
+> 3.简化打印信息,每个文档输出一次;而不是每次比较输出一次
+>
+> 4.去除冗余文件
 
 ### dev1.0.2 更新时间2022-06-15
 

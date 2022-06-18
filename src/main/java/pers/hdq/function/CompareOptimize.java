@@ -223,6 +223,7 @@ public class CompareOptimize {
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
             docLeftAllSimList.add(cellSimEntity);
         }
+        
         if (sumCount <= 100000) {
             // 相似度实体加到详细结果中
             detailList.addAll(docLeftAllSimList);
@@ -231,6 +232,7 @@ public class CompareOptimize {
         docLeftAllSimList =
                 docLeftAllSimList.stream().sorted(Comparator.comparing(SimilarityOutEntity::getWeightedSimDouble,
                         Comparator.reverseOrder())).collect(Collectors.toList());
+        System.out.println(docLeft.getAbsolutePath() + " 与其后的" + docLeftAllSimList.size() + "个文档比较完成,最大相似度:" + docLeftAllSimList.get(0).getWeightedSim());
         /*  求出每个文档的最大值，如果最大值有多个，只保留10个*/
         int m = 0;
         for (SimilarityOutEntity similarityOutEntity : docLeftAllSimList) {
@@ -417,7 +419,6 @@ public class CompareOptimize {
             DocFileEntity docRight = thisYearDocEntityList.get(j);
             // 比较两个文档相似度，返回相似度实体
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
-            
             docLeftAllSimList.add(cellSimEntity);
         }
         //往年文档
@@ -428,11 +429,13 @@ public class CompareOptimize {
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
             docLeftAllSimList.add(cellSimEntity);
         }
+        
         if (sumCount <= 100000) {
             detailList.addAll(docLeftAllSimList);
         }
         // 找出和文档1最相似的文档，先降序排序
         docLeftAllSimList = docLeftAllSimList.stream().sorted(Comparator.comparing(SimilarityOutEntity::getWeightedSimDouble, Comparator.reverseOrder())).collect(Collectors.toList());
+        System.out.println(docLeft.getAbsolutePath() + "与其后的" + docLeftAllSimList.size() + "个文档比较完成,最大相似度:" + docLeftAllSimList.get(0).getWeightedSim());
         /*  求出每个文档的最大值，如果最大值有多个，只保留10个*/
         int m = 0;
         for (SimilarityOutEntity similarityOutEntity : docLeftAllSimList) {
@@ -515,9 +518,6 @@ public class CompareOptimize {
             plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docLeft.getAbsolutePath()).build());
             plagiarizeEntityList.add(PlagiarizeEntity.builder().docName(docRight.getAbsolutePath()).build());
         }
-        System.out.println(docLeft.getFileName() + "  与  " + docRight.getFileName() + "\n\tJac相似度为:" + numFormat.format(jaccardSim)
-                + "\n\t余弦相似度为:" + numFormat.format(conSim) + "\n\t图片相似度为:" + numFormat.format(avgPicSim) + "\n\t加权相似度为:"
-                + numFormat.format(weightedSim) + "\n  参考判定:" + judgeResult);
         
         return SimilarityOutEntity.builder()
                 .judgeResult(judgeResult)
