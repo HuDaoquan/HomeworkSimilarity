@@ -4,11 +4,8 @@ import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.apache.poi.xwpf.usermodel.XWPFTable;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  * TODO
@@ -31,7 +28,7 @@ public class WordUtil {
     public static void main(String[] args) throws Exception {
         
         FileOutputStream out = null;
-        for (int i = 1; i < 1001; i++) {
+        for (int i = 1; i < 800; i++) {
             XWPFDocument doc = new XWPFDocument();// 创建Word文件
             
             XWPFParagraph p = doc.createParagraph();// 新建一个段落
@@ -223,7 +220,7 @@ public class WordUtil {
                     "各位代表！\n" +
                     "\n" +
                     "中国的发展从来都是在应对挑战中前进的，中国人民有战胜任何艰难险阻的勇气、智慧和力量。我们要更加紧密地团结在以习近平同志为核心的党中央周围，高举中国特色社会主义伟大旗帜，以习近平新时代中国特色社会主义思想为指导，攻坚克难，砥砺奋进，努力完成全年目标任务，以实际行动迎接党的二十大胜利召开，为把我国建设成为富强民主文明和谐美丽的社会主义现代化强国、实现中华民族伟大复兴的中国梦不懈奋斗！" + i);
-            out = new FileOutputStream("D:\\桌面\\查重大文本\\文档" + i + ".docx");
+            out = new FileOutputStream("F:\\桌面\\查重大文本\\文档" + i + ".docx");
             doc.write(out);
         }
         out.close();

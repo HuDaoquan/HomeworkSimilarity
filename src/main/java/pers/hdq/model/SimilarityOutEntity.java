@@ -7,7 +7,6 @@ import com.alibaba.excel.annotation.write.style.ContentRowHeight;
 import com.alibaba.excel.annotation.write.style.HeadRowHeight;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -82,9 +81,9 @@ public class SimilarityOutEntity {
     @ExcelIgnore
     private Double weightedSimDouble;
     
-    /**
-     * 已比较完成的次数
-     **/
-    @ExcelIgnore
-    private Integer finishDocCount;
+    // /**
+    //  * 已比较完成的次数，多线程此值获取不便
+    //  **/
+    // @ExcelIgnore
+    // private Integer finishDocCount;
 }

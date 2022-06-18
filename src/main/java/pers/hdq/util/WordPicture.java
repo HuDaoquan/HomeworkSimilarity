@@ -1,14 +1,5 @@
 package pers.hdq.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.PicturesTable;
@@ -17,6 +8,15 @@ import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import pers.hdq.model.DocFileEntity;
+import pers.hdq.picture.SaveHash;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author HuDaoquan
@@ -28,7 +28,7 @@ import pers.hdq.model.DocFileEntity;
 public class WordPicture {
     
     public static List<String> getWordPicture(DocFileEntity docEntity) {
-        List<String> picturePathList = new ArrayList<>();
+        List<String> pictureHashList = new ArrayList<>();
         File file = new File(docEntity.getAbsolutePath());
         
         InputStream is = null;
@@ -42,43 +42,23 @@ public class WordPicture {
                 // 文档图片
                 PicturesTable picturesTable = doc.getPicturesTable();
                 List<Picture> pictures = picturesTable.getAllPictures();
-                // 创建存储图片的文件夹，已存在则清空
-                File fileP = new File(docEntity.getPictureParentPath());
-                if (!fileP.exists()) {
-                    fileP.mkdirs();
-                } else {
-                    delAllFile(docEntity.getPictureParentPath()); // 删除完里面所有内容
-                }
-                // 将图片存入本地
-                int index = 0;
+                // 获取每张图片哈希指纹
                 for (Picture picture : pictures) {
-                    File F = new File(fileP, "图片" + (index++) + "." + picture.suggestFileExtension());
-                    picturePathList.add(F.getAbsolutePath());
-                    OutputStream out = new FileOutputStream(F);
-                    picture.writeImageContent(out);
-                    out.close();
+                    InputStream pictureFile = new ByteArrayInputStream(picture.getContent());
+                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureFile.close();
                 }
             } else if (docEntity.getAbsolutePath().endsWith("docx")) {
                 docx = new XWPFDocument(is);
                 extractor = new XWPFWordExtractor(docx);
-                File fileP = new File(docEntity.getPictureParentPath());
-                // 创建存储图片的文件夹
-                if (!fileP.exists()) {
-                    fileP.mkdirs();
-                } else {
-                    delAllFile(docEntity.getPictureParentPath()); // 删除完里面所有内容
-                }
                 // 文档图片
                 List<XWPFPictureData> pictures = docx.getAllPictures();
                 for (XWPFPictureData picture : pictures) {
                     byte[] bytev = picture.getData();
-                    // 输出图片到磁盘
-//					System.out.println("picture.getFileName():-----" + picture.getFileName()); // picture.getFileName():-----image1.png
-                    File F = new File(fileP, picture.getFileName());
-                    picturePathList.add(F.getAbsolutePath());
-                    FileOutputStream out = new FileOutputStream(F);
-                    out.write(bytev);
-                    out.close();
+                    InputStream pictureFile = new ByteArrayInputStream(bytev);
+                    // 获取图片哈希指纹
+                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureFile.close();
                 }
             } else {
                 System.out.println("此文件不是word文件！");
@@ -97,7 +77,7 @@ public class WordPicture {
                 System.out.println("关闭文件失败:不影响:" + e);
             }
         }
-        return picturePathList;
+        return pictureHashList;
     }
     
     /**
