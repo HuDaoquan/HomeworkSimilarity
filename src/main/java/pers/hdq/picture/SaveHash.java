@@ -1,11 +1,10 @@
 package pers.hdq.picture;
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author HuDaoquan
@@ -25,7 +24,7 @@ public class SaveHash {
      *
      * @return
      */
-    public static String getFeatureValue(String imagePath) {
+    public static String getFeatureValue(InputStream imagePath) {
         // 缩小尺寸，简化色彩
         int[][] grayMatrix = getGrayPixel(imagePath, 32, 32);
         // 计算DCT
@@ -66,7 +65,7 @@ public class SaveHash {
      *
      * @return
      */
-    public static int[][] getGrayPixel(String imagePath, int width, int height) {
+    public static int[][] getGrayPixel(InputStream imagePath, int width, int height) {
         BufferedImage bi = null;
         try {
             bi = resizeImage(imagePath, width, height, BufferedImage.TYPE_INT_RGB);
@@ -93,7 +92,7 @@ public class SaveHash {
     /**
      * 缩放图片尺寸
      *
-     * @param srcImgPath
+     * @param srcFile
      * @param width
      * @param height
      * @param imageType
@@ -101,11 +100,10 @@ public class SaveHash {
      * @return
      * @throws IOException
      */
-    public static BufferedImage resizeImage(String srcImgPath, int width, int height, int imageType) throws IOException {
-        File srcFile = new File(srcImgPath);
+    public static BufferedImage resizeImage(InputStream srcFile, int width, int height, int imageType) throws IOException {
+        // File srcFile = new File(srcImgPath);
         BufferedImage srcImg = ImageIO.read(srcFile);
-        BufferedImage buffImg = null;
-        buffImg = new BufferedImage(width, height, imageType);
+        BufferedImage buffImg = new BufferedImage(width, height, imageType);
         buffImg.getGraphics().drawImage(srcImg.getScaledInstance(width, height, Image.SCALE_SMOOTH), 0, 0, null);
         return buffImg;
     }

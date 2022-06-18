@@ -36,7 +36,7 @@ public class DocFileEntity {
     /**
      * 本文所有图片的父路径
      **/
-    private String pictureParentPath;
+    // private String pictureParentPath;
     
     /**
      * 分词结果
