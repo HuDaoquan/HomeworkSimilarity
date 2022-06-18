@@ -28,7 +28,7 @@ public class WordUtil {
     public static void main(String[] args) throws Exception {
         
         FileOutputStream out = null;
-        for (int i = 1; i < 1001; i++) {
+        for (int i = 1; i < 800; i++) {
             XWPFDocument doc = new XWPFDocument();// 创建Word文件
             
             XWPFParagraph p = doc.createParagraph();// 新建一个段落
