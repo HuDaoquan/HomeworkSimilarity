@@ -21,9 +21,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -41,8 +41,31 @@ public class CompareOptimize {
      * 本机CPU核数
      **/
     final static int CORE_NUM = Runtime.getRuntime().availableProcessors();
-   
-   
+    
+    /**
+     * 文件读取线程池，核心线程数=2CPU核数，最大线程数2Cpu核数
+     **/
+    final static ExecutorService fileThreadPool = new ThreadPoolExecutor(2 * CORE_NUM, 2 * CORE_NUM, 10L,
+            TimeUnit.SECONDS,
+            new LinkedTransferQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("doc-ini-pool-%d").build(),
+            new ThreadPoolExecutor.CallerRunsPolicy());
+    /**
+     * 单线程线程池
+     **/
+    final static ExecutorService singleThreadPool = new ThreadPoolExecutor(1, 1, 10L, TimeUnit.SECONDS,
+            new LinkedTransferQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("single-pool-%d").build(),
+            new ThreadPoolExecutor.CallerRunsPolicy());
+    
+    /**
+     * 文档比较线程池，核心线程数=CPU核数，最大线程数Cpu核数
+     **/
+    final static ExecutorService compareThreadPool = new ThreadPoolExecutor(CORE_NUM, CORE_NUM, 10L, TimeUnit.SECONDS,
+            new LinkedTransferQueue<>(),
+            new ThreadFactoryBuilder().setNameFormat("compare-pool-%d").build(),
+            new ThreadPoolExecutor.CallerRunsPolicy());
+    
    /*
    corePoolSize：当在方法execute(Runnable)中提交了一个新任务，并且运行的线程少于 corePoolSize 时，即使其他工作线程处于空闲状态，也会创建一个新线程来处理该请求。
    如果运行的线程数多于 corePoolSize 但少于 maximumPoolSize，则仅当队列已满时才会创建新线程
@@ -76,13 +99,13 @@ public class CompareOptimize {
     
     public static void main(String[] args) throws Exception {
         /*  需要查重的路径*/
-        String path = "F:\\桌面\\查重大文本";
+        String path = "D:\\桌面\\查重txt";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         String excelPath =
                 path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(DateFormatUtils.format(new Date(),
                         "yyyyMMddHHmmss")).concat(".xlsx");
-        getSimilarityMode2(path, true, false, 0.5, excelPath);
+        getSimilarityMode1(path, true, false, 0.5, excelPath, true);
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
         /*  输出程序运行时间*/
@@ -103,8 +126,8 @@ public class CompareOptimize {
      * @date 2022/6/15 14:50
      **/
     public static void getSimilarityMode1(String path, Boolean ikFlag, Boolean pictureSimFlag,
-                                          Double threshold, String excelPath) throws Exception {
-        
+                                          Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
+    
         System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         /*  递归遍历目录；获取所有文档绝对路径*/
         List<String> allDocAbsolutePath = recursionWord(path);
@@ -112,12 +135,12 @@ public class CompareOptimize {
         int sumCount = (allDocAbsolutePath.size() - 1) * allDocAbsolutePath.size() / 2;
         // 存储所有文档
         List<DocFileEntity> allDocEntityList = Collections.synchronizedList(new ArrayList<>(allDocAbsolutePath.size()));
-        /**
-         * 文件读取线程池，核心线程数1，最大线程数4;优先创建线程
-         **/
-        ExecutorService fileThreadPool = new ThreadPoolExecutor(4, 6, 10L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(100), new ThreadFactoryBuilder().setNameFormat("doc-ini-pool-%d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+        //选择线程类型
+        ExecutorService threadPool = fileThreadPool;
+        if (!multithreadingFlag) {
+            threadPool = singleThreadPool;
+        }
+    
         CountDownLatch cdl = new CountDownLatch(allDocAbsolutePath.size());
         //遍历处理所有文件
         for (String s : allDocAbsolutePath) {
@@ -130,7 +153,7 @@ public class CompareOptimize {
                 }
             };
             //执行线程
-            fileThreadPool.execute(run);
+            threadPool.execute(run);
         }
         
         //线程执行完后再执行主线程
@@ -139,8 +162,6 @@ public class CompareOptimize {
         } catch (InterruptedException e) {
             System.out.println("阻塞子线程中断异常:" + e);
         }
-        //关闭线程池
-        fileThreadPool.shutdown();
         System.out.println("文档读取完成,开始计算相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         
         
@@ -155,12 +176,11 @@ public class CompareOptimize {
                 Collections.synchronizedList(new ArrayList<>(allDocAbsolutePath.size()));
         // sheet3中抄袭名单
         List<PlagiarizeEntity> plagiarizeEntityList = Collections.synchronizedList(new ArrayList<>());
-        //创建比较的线程池
-        ExecutorService compareThreadPool = new ThreadPoolExecutor(CORE_NUM, CORE_NUM, 10L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(allDocEntityList.size() / CORE_NUM),
-                new ThreadFactoryBuilder().setNameFormat("compare-pool-%d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-        
+        //选择线程类型
+        ExecutorService comThreadPool = compareThreadPool;
+        if (!multithreadingFlag) {
+            comThreadPool = singleThreadPool;
+        }
         CountDownLatch compareCdl = new CountDownLatch(allDocAbsolutePath.size() - 1);
         // 遍所有文档信息冒泡原理两两比较文档相似度
         for (int i = 0; i < allDocEntityList.size() - 1; i++) {
@@ -174,8 +194,7 @@ public class CompareOptimize {
                 }
             };
             //执行线程
-            compareThreadPool.execute(run);
-            
+            comThreadPool.execute(run);
         }
         //线程执行完后再执行主线程
         try {
@@ -183,8 +202,7 @@ public class CompareOptimize {
         } catch (InterruptedException e) {
             System.out.println("阻塞子线程中断异常:" + e);
         }
-        //关闭线程池
-        compareThreadPool.shutdown();
+
         if (detailList.isEmpty()) {
             SimilarityOutEntity similarityOutEntity =
                     SimilarityOutEntity.builder().judgeResult("本次比较详细结果将超过" + sumCount + "行,防止excel崩溃,此次详细结果不输出,请参考简略结果").build();
@@ -287,7 +305,7 @@ public class CompareOptimize {
      * @date 2022/6/15 13:15
      **/
     public static void getSimilarityMode2(String path, Boolean ikFlag, Boolean pictureSimFlag,
-                                          Double threshold, String excelPath) throws Exception {
+                                          Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
         System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         /*  递归遍历目录；获取所有今年文档绝对路径*/
         List<String> thisYearDocAbsolutePath = recursionWord(path + "\\今年");
@@ -296,20 +314,19 @@ public class CompareOptimize {
         //总计算次数
         int sumCount =
                 (thisYearDocAbsolutePath.size() - 1) * thisYearDocAbsolutePath.size() / 2 + thisYearDocAbsolutePath.size() * historyYearDocAbsolutePath.size();
-        
+    
         // 存储今年文档
         List<DocFileEntity> thisYearDocEntityList =
                 Collections.synchronizedList(new ArrayList<>(thisYearDocAbsolutePath.size()));
         // 存储往年文档
         List<DocFileEntity> historyYearDocEntityList =
                 Collections.synchronizedList(new ArrayList<>(historyYearDocAbsolutePath.size()));
-        /**
-         * 文件读取线程池，核心线程数1，最大线程数4;优先创建线程
-         **/
-        ExecutorService fileThreadPool = new ThreadPoolExecutor(CORE_NUM, 2 * CORE_NUM, 10L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(thisYearDocAbsolutePath.size() / (2 * CORE_NUM)),
-                new ThreadFactoryBuilder().setNameFormat("doc-ini-pool-%d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+        //选择线程类型
+        ExecutorService threadPool = fileThreadPool;
+        ExecutorService comThreadPool = fileThreadPool;
+        if (!multithreadingFlag) {
+            threadPool = singleThreadPool;
+        }
         // 线程计数器
         CountDownLatch thisYearCdl = new CountDownLatch(thisYearDocAbsolutePath.size());
         //遍历处理所有今年文档
@@ -324,7 +341,7 @@ public class CompareOptimize {
                 }
             };
             //执行线程
-            fileThreadPool.execute(run);
+            threadPool.execute(run);
         }
         
         CountDownLatch historyCdl = new CountDownLatch(historyYearDocAbsolutePath.size());
@@ -340,7 +357,7 @@ public class CompareOptimize {
                 }
             };
             //执行线程
-            fileThreadPool.execute(run);
+            threadPool.execute(run);
         }
         
         
@@ -353,8 +370,7 @@ public class CompareOptimize {
         }
         System.out.println("今年文档数量:" + thisYearDocEntityList.size());
         System.out.println("往年文档数量:" + historyYearDocEntityList.size());
-        //关闭线程池
-        fileThreadPool.shutdown();
+    
         System.out.println("开始计算相似度,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
         // 详情名单初始长度
         int detailSize = sumCount;
@@ -368,15 +384,9 @@ public class CompareOptimize {
                 thisYearDocEntityList.size()));
         // sheet3中抄袭名单
         List<PlagiarizeEntity> plagiarizeEntityList = Collections.synchronizedList(new ArrayList<>());
-        /**
-         * 相似度计算线程池，核心线程数1，最大线程数4;优先创建线程
-         **/
-        ExecutorService compareThreadPool = new ThreadPoolExecutor(CORE_NUM, CORE_NUM, 10L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(thisYearDocEntityList.size() / CORE_NUM),
-                new ThreadFactoryBuilder().setNameFormat("compare-pool-%d").build(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+    
         CountDownLatch compareCdl = new CountDownLatch(thisYearDocEntityList.size());
-        
+    
         // 冒泡排序原理遍历比较文件，遍所有文档信息冒泡原理两两比较文档相似度
         for (int i = 0; i < thisYearDocEntityList.size(); i++) {
             int finalI = i;
@@ -389,7 +399,7 @@ public class CompareOptimize {
                 }
             };
             //执行线程
-            compareThreadPool.execute(run);
+            comThreadPool.execute(run);
         }
         //线程执行完后再执行主线程
         try {
