@@ -1,6 +1,6 @@
 package pers.hdq.ui;
 
-import org.apache.commons.lang.time.DateFormatUtils;
+
 import pers.hdq.function.CompareOptimize;
 
 import javax.swing.*;
@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -37,6 +38,7 @@ public class UIhdq extends JPanel {
     // 查重模式 1、所有文档两两比较；2、今年与往年比较（要求所选路径中必须有一个”今年“文件夹、一个“往年”文件夹）
     private JComboBox<String> queryModeBox;
     private JComboBox<String> multithreadingBox;
+    
     public UIhdq() {
         initComponents();
     }
@@ -191,25 +193,25 @@ public class UIhdq extends JPanel {
         comboBox.addItem("80%");
         comboBox.addItem("90%");
         comboBox.addItem("95%");
-    
+        
         queryModeBox = new JComboBox<String>();
         queryModeBox.setToolTipText("查重模式 \n1、所有文档两两比较；\n2、今年与往年比较（所选路径中必须有一个”今年“文件夹、一个“往年”文件夹）");
         queryModeBox.addItem("选择查重模式");
         queryModeBox.addItem("模式1两两");
         queryModeBox.addItem("模式2今年与往年");
-    
+        
         multithreadingBox = new JComboBox<String>();
         multithreadingBox.setToolTipText("开启多线程,速度更快;但更耗CPU资源");
         multithreadingBox.addItem("线程模式");
         multithreadingBox.addItem("1.单线程");
         multithreadingBox.addItem("2.多线程");
-    
+        
         JButton beginButton = new JButton("开始查重");
         beginButton.setForeground(Color.BLACK);
         beginButton.setFont(new Font("仿宋", Font.BOLD, 20));
         beginButton.addMouseListener(new MouseAdapter() {
             int index = 1;
-        
+            
             @Override
             public void mouseClicked(MouseEvent e) {
                 docLocationTextArea.setText("开始处理：\n");
@@ -258,9 +260,9 @@ public class UIhdq extends JPanel {
                 long startTime = System.currentTimeMillis(); // 获取开始时间
                 //是否开启多线程
                 boolean multithreadingFlag = "2.多线程".equals(multithreadingBox.getSelectedItem());
-            
+                
                 String excelPath =
-                        path + "\\查重结果".concat("智能分词-" + "图片查重-" + (String) queryModeBox.getSelectedItem()).concat(DateFormatUtils.format(new Date(), "yyyyMMddHHmmss")).concat(".xlsx");
+                        path + "\\查重结果".concat("智能分词-" + "图片查重-" + (String) queryModeBox.getSelectedItem()).concat(new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())).concat(".xlsx");
                 try {
                     switch ((String) queryModeBox.getSelectedItem()) {
                         case "模式2今年与往年":
@@ -270,15 +272,15 @@ public class UIhdq extends JPanel {
                         default:
                             CompareOptimize.getSimilarityMode1(path, wordBox.isSelected(), picBox.isSelected(),
                                     simThre, excelPath, multithreadingFlag);
-                    
+                        
                     }
                     long endTime = System.currentTimeMillis(); // 获取结束时间
                     System.out.println("所有文档相似度计算完成，共耗时：" + (endTime - startTime) / 1000 + "s"); // 输出程序运行时间
                 } catch (Exception ex) {
                     System.out.println("计算出错,请检查后重试:" + ex);
                 }
-            
-            
+                
+                
             }
         });
         panel2.add(comboBox);
