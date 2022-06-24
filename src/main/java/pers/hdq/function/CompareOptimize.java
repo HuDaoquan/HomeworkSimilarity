@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import pers.hdq.model.DocFileEntity;
 import pers.hdq.model.PlagiarizeEntity;
 import pers.hdq.model.SimilarityOutEntity;
-import pers.hdq.picture.SaveHash;
+import pers.hdq.picture.PHash;
 import pers.hdq.similarity.CosineSimilarity;
 import pers.hdq.similarity.Jaccard;
 import pers.hdq.util.EasyExcelUtil;
@@ -492,7 +492,7 @@ public class CompareOptimize {
             for (String hashLeft : docLeft.getPictureHashList()) {
                 List<Double> leftDocPictureSimList = new ArrayList<>(docLeft.getPictureHashList().size());
                 for (String hashRight : docRight.getPictureHashList()) {
-                    double pictureSim = SaveHash.getSimilarity(hashLeft, hashRight);
+                    double pictureSim = PHash.getSimilarity(hashLeft, hashRight);
                     leftDocPictureSimList.add(pictureSim);
                     /*  找到某张图相似度超过90%就不再比较后面了，直接比较文档1的下一张图*/
                     if (pictureSim > 0.9) {

@@ -8,7 +8,7 @@ import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import pers.hdq.model.DocFileEntity;
-import pers.hdq.picture.SaveHash;
+import pers.hdq.picture.PHash;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -45,7 +45,7 @@ public class WordPicture {
                 // 获取每张图片哈希指纹
                 for (Picture picture : pictures) {
                     InputStream pictureFile = new ByteArrayInputStream(picture.getContent());
-                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureHashList.add(PHash.getFeatureValue(pictureFile));
                     pictureFile.close();
                 }
             } else if (docEntity.getAbsolutePath().endsWith("docx")) {
@@ -57,7 +57,7 @@ public class WordPicture {
                     byte[] bytev = picture.getData();
                     InputStream pictureFile = new ByteArrayInputStream(bytev);
                     // 获取图片哈希指纹
-                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureHashList.add(PHash.getFeatureValue(pictureFile));
                     pictureFile.close();
                 }
             } else {
