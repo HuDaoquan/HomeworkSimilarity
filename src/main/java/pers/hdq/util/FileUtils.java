@@ -1,9 +1,9 @@
 package pers.hdq.util;
 
 
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
+import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 
@@ -203,8 +203,8 @@ public class FileUtils {
         String str1 = null;
         String str2 = null;
         
-        String filePath1 = "F:\\大三\\大二\\大二下\\第4次微机原理\\1500890217  何荣  微机原理第4次实验 .doc";
-        String filePath2 = "F:\\大三\\大二\\大二下\\第4次微机原理\\1500890250  聂彩娥  微机原理第4次实验.doc";
+        String filePath1 = "F:\\桌面\\查重图片\\今年\\文档1 - 副本.doc";
+        String filePath2 = "F:\\桌面\\查重图片\\今年\\文档1.docx";
         
         str1 = readFile(filePath1);
         str2 = readFile(filePath2);

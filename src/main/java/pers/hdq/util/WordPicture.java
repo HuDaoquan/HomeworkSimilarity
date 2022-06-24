@@ -1,9 +1,9 @@
 package pers.hdq.util;
 
-import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.PicturesTable;
 import org.apache.poi.hwpf.usermodel.Picture;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
@@ -102,8 +102,12 @@ public class WordPicture {
     }
     
     public static void main(String[] args) {
-        String path = "D:\\我的文档\\桌面\\测试\\1500890226  李芝强  微机原理第4次实验 .doc";
-        WordPicture wp = new WordPicture();
+        String path = "F:\\桌面\\查重图片\\今年\\文档1.docx";
+        
+        DocFileEntity docEntity = DocFileEntity.builder()
+                .fileName("文档")
+                .absolutePath(path).build();
+        getWordPicture(docEntity);
         
     }
 }

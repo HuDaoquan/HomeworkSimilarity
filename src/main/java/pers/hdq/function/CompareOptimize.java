@@ -1,7 +1,6 @@
 package pers.hdq.function;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.commons.lang.time.DateFormatUtils;
 import pers.hdq.model.DocFileEntity;
 import pers.hdq.model.PlagiarizeEntity;
 import pers.hdq.model.SimilarityOutEntity;
@@ -15,6 +14,7 @@ import pers.hdq.util.WordPicture;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -99,12 +99,11 @@ public class CompareOptimize {
     
     public static void main(String[] args) throws Exception {
         /*  需要查重的路径*/
-        String path = "D:\\桌面\\查重txt";
+        String path = "F:\\桌面\\查重图片";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         String excelPath =
-                path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(DateFormatUtils.format(new Date(),
-                        "yyyyMMddHHmmss")).concat(".xlsx");
+                path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())).concat(".xlsx");
         getSimilarityMode1(path, true, false, 0.5, excelPath, true);
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
@@ -127,8 +126,8 @@ public class CompareOptimize {
      **/
     public static void getSimilarityMode1(String path, Boolean ikFlag, Boolean pictureSimFlag,
                                           Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
-    
-        System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        
+        System.out.println("开始扫描文档,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         /*  递归遍历目录；获取所有文档绝对路径*/
         List<String> allDocAbsolutePath = recursionWord(path);
         //总计算次数
@@ -140,7 +139,7 @@ public class CompareOptimize {
         if (!multithreadingFlag) {
             threadPool = singleThreadPool;
         }
-    
+        
         CountDownLatch cdl = new CountDownLatch(allDocAbsolutePath.size());
         //遍历处理所有文件
         for (String s : allDocAbsolutePath) {
@@ -162,7 +161,7 @@ public class CompareOptimize {
         } catch (InterruptedException e) {
             System.out.println("阻塞子线程中断异常:" + e);
         }
-        System.out.println("文档读取完成,开始计算相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        System.out.println("文档读取完成,开始计算相似度,共计" + allDocAbsolutePath.size() + "个文件,需计算" + sumCount + "次,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         
         
         int detailSize = sumCount;
@@ -202,7 +201,7 @@ public class CompareOptimize {
         } catch (InterruptedException e) {
             System.out.println("阻塞子线程中断异常:" + e);
         }
-
+        
         if (detailList.isEmpty()) {
             SimilarityOutEntity similarityOutEntity =
                     SimilarityOutEntity.builder().judgeResult("本次比较详细结果将超过" + sumCount + "行,防止excel崩溃,此次详细结果不输出,请参考简略结果").build();
@@ -287,7 +286,7 @@ public class CompareOptimize {
                 Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(PlagiarizeEntity::getDocName))), ArrayList::new));
         
         
-        System.out.println("相似度计算完成,开始导出excel文件,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        System.out.println("相似度计算完成,开始导出excel文件,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         EasyExcelUtil.writeExcel(excelPath, detailList, sortMaxResultList, plagiarizeEntityList);
         System.err.println("相似度计算结果已存入：" + excelPath);
     }
@@ -306,7 +305,7 @@ public class CompareOptimize {
      **/
     public static void getSimilarityMode2(String path, Boolean ikFlag, Boolean pictureSimFlag,
                                           Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
-        System.out.println("开始扫描文档,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        System.out.println("开始扫描文档,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         /*  递归遍历目录；获取所有今年文档绝对路径*/
         List<String> thisYearDocAbsolutePath = recursionWord(path + "\\今年");
         // 往年文档路径
@@ -314,7 +313,7 @@ public class CompareOptimize {
         //总计算次数
         int sumCount =
                 (thisYearDocAbsolutePath.size() - 1) * thisYearDocAbsolutePath.size() / 2 + thisYearDocAbsolutePath.size() * historyYearDocAbsolutePath.size();
-    
+        
         // 存储今年文档
         List<DocFileEntity> thisYearDocEntityList =
                 Collections.synchronizedList(new ArrayList<>(thisYearDocAbsolutePath.size()));
@@ -370,8 +369,8 @@ public class CompareOptimize {
         }
         System.out.println("今年文档数量:" + thisYearDocEntityList.size());
         System.out.println("往年文档数量:" + historyYearDocEntityList.size());
-    
-        System.out.println("开始计算相似度,需计算" + sumCount + "次,当前时间:" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        
+        System.out.println("开始计算相似度,需计算" + sumCount + "次,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         // 详情名单初始长度
         int detailSize = sumCount;
         if (sumCount > 100000) {
@@ -384,9 +383,9 @@ public class CompareOptimize {
                 thisYearDocEntityList.size()));
         // sheet3中抄袭名单
         List<PlagiarizeEntity> plagiarizeEntityList = Collections.synchronizedList(new ArrayList<>());
-    
+        
         CountDownLatch compareCdl = new CountDownLatch(thisYearDocEntityList.size());
-    
+        
         // 冒泡排序原理遍历比较文件，遍所有文档信息冒泡原理两两比较文档相似度
         for (int i = 0; i < thisYearDocEntityList.size(); i++) {
             int finalI = i;
