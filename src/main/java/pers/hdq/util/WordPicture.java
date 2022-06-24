@@ -1,14 +1,14 @@
 package pers.hdq.util;
 
-import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.PicturesTable;
 import org.apache.poi.hwpf.usermodel.Picture;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import pers.hdq.model.DocFileEntity;
-import pers.hdq.picture.SaveHash;
+import pers.hdq.picture.PHash;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -45,7 +45,7 @@ public class WordPicture {
                 // 获取每张图片哈希指纹
                 for (Picture picture : pictures) {
                     InputStream pictureFile = new ByteArrayInputStream(picture.getContent());
-                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureHashList.add(PHash.getFeatureValue(pictureFile));
                     pictureFile.close();
                 }
             } else if (docEntity.getAbsolutePath().endsWith("docx")) {
@@ -57,7 +57,7 @@ public class WordPicture {
                     byte[] bytev = picture.getData();
                     InputStream pictureFile = new ByteArrayInputStream(bytev);
                     // 获取图片哈希指纹
-                    pictureHashList.add(SaveHash.getFeatureValue(pictureFile));
+                    pictureHashList.add(PHash.getFeatureValue(pictureFile));
                     pictureFile.close();
                 }
             } else {
@@ -102,8 +102,12 @@ public class WordPicture {
     }
     
     public static void main(String[] args) {
-        String path = "D:\\我的文档\\桌面\\测试\\1500890226  李芝强  微机原理第4次实验 .doc";
-        WordPicture wp = new WordPicture();
+        String path = "F:\\桌面\\查重图片\\今年\\文档1.docx";
+        
+        DocFileEntity docEntity = DocFileEntity.builder()
+                .fileName("文档")
+                .absolutePath(path).build();
+        getWordPicture(docEntity);
         
     }
 }
