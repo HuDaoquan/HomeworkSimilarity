@@ -126,7 +126,7 @@ public class FileUtils {
                 System.out.println("此文件不是word文件！");
             }
         } catch (Exception e) {
-            System.out.println("打开文件报错" + e);
+            System.out.println("打开文件"+path+"报错:" + e);
         }
         return buffer;
     }
