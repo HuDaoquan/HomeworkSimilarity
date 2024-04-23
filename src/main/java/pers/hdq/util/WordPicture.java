@@ -63,7 +63,7 @@ public class WordPicture {
             } else {
                 System.out.println("此文件不是word文件！");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("打开文件失败:请检查文件是否有特殊格式:" + e);
         } finally {
             try {
@@ -73,7 +73,7 @@ public class WordPicture {
                 if (is != null) {
                     is.close();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println("关闭文件失败:不影响:" + e);
             }
         }

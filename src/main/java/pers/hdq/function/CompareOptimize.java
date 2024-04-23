@@ -99,12 +99,12 @@ public class CompareOptimize {
     
     public static void main(String[] args) throws Exception {
         /*  需要查重的路径*/
-        String path = "F:\\桌面\\查重图片";
+        String path = "D:\\杂\\查重";
         /*  获取开始时间*/
         long startTime = System.currentTimeMillis();
         String excelPath =
                 path + "\\查重结果".concat("智能分词-" + "图片查重-模式2").concat(new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())).concat(".xlsx");
-        getSimilarityMode1(path, true, false, 0.5, excelPath, true);
+        getSimilarityMode1(path, true, true, 0.5, excelPath, true);
         /*  获取结束时间*/
         long endTime = System.currentTimeMillis();
         /*  输出程序运行时间*/
