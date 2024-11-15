@@ -4,7 +4,7 @@
     <groupId>com.hdq</groupId>
     <artifactId>WordSim</artifactId>
     <version>1.0.3-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>WordSim</name>
 
     <properties>
@@ -87,6 +87,27 @@
                     <!-- class的编译器版本 -->
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>your-application</finalName> <!-- 可执行 JAR 文件的名称 -->
+                            <artifactSet>
+                                <excludes>
+                                    <!-- 排除不需要的依赖 -->
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>
