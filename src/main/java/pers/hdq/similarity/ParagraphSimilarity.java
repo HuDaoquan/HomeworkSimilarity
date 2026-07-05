@@ -6,15 +6,17 @@ public class ParagraphSimilarity {
 
     public static class DuplicateFragment {
         private String text;
+        private String rightText;
         private int leftStartIndex;
         private int leftEndIndex;
         private int rightStartIndex;
         private int rightEndIndex;
         private double similarity;
 
-        public DuplicateFragment(String text, int leftStartIndex, int leftEndIndex,
+        public DuplicateFragment(String text, String rightText, int leftStartIndex, int leftEndIndex,
                                  int rightStartIndex, int rightEndIndex, double similarity) {
             this.text = text;
+            this.rightText = rightText;
             this.leftStartIndex = leftStartIndex;
             this.leftEndIndex = leftEndIndex;
             this.rightStartIndex = rightStartIndex;
@@ -23,6 +25,7 @@ public class ParagraphSimilarity {
         }
 
         public String getText() { return text; }
+        public String getRightText() { return rightText; }
         public double getSimilarity() { return similarity; }
         public int getLeftStartIndex() { return leftStartIndex; }
         public int getLeftEndIndex() { return leftEndIndex; }
@@ -30,7 +33,7 @@ public class ParagraphSimilarity {
         public int getRightEndIndex() { return rightEndIndex; }
     }
 
-    public static List<DuplicateFragment> findDuplicateFragments(String text1, String text2, int minFragmentLength) {
+    public static List<DuplicateFragment> findDuplicateFragments(String text1, String text2, int minFragmentLength, double threshold) {
         List<DuplicateFragment> fragments = new ArrayList<>();
         String[] sentences1 = splitSentences(text1);
         String[] sentences2 = splitSentences(text2);
@@ -40,13 +43,22 @@ public class ParagraphSimilarity {
                 if (sentences1[i].length() < minFragmentLength || sentences2[j].length() < minFragmentLength) {
                     continue;
                 }
-                double sim = Jaccard.jaccardSimilarity(
-                    Arrays.asList(sentences1[i].split("")),
-                    Arrays.asList(sentences2[j].split(""))
+                //  杰卡德相似度
+                // double jaccardSim = Jaccard.jaccardSimilarity(
+                //     Arrays.asList(sentences1[i].split("")),
+                //     Arrays.asList(sentences2[j].split(""))
+                // );
+                /*  余弦相似度*/
+                double conSim = CosineSimilarity.sim(
+                        Arrays.asList(sentences1[i].split("")),
+                        Arrays.asList(sentences2[j].split(""))
                 );
-                if (sim > 0.6) {
+                // double sim = (conSim + jaccardSim) / 2;
+                double sim = conSim;
+                
+                if (sim > threshold) {
                     fragments.add(new DuplicateFragment(
-                        sentences1[i], i, i, j, j, sim
+                        sentences1[i], sentences2[j], i, i, j, j, sim
                     ));
                 }
             }

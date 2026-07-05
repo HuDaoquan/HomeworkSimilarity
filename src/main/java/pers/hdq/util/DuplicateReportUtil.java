@@ -57,7 +57,8 @@ public class DuplicateReportUtil {
                 String cssClass = f.getSimilarity() > 0.8 ? "fragment-item high-sim" : "fragment-item medium-sim";
                 pw.println("<div class='" + cssClass + "'>");
                 pw.println("相似度: " + String.format("%.1f%%", f.getSimilarity() * 100));
-                pw.println("<br>内容: " + escapeHtml(f.getText()));
+                pw.println("<br><b>【" + doc1Name + "】第" + (f.getLeftStartIndex() + 1) + "句:</b> " + escapeHtml(f.getText()));
+                pw.println("<br><b>【" + doc2Name + "】第" + (f.getRightStartIndex() + 1) + "句:</b> " + escapeHtml(f.getRightText()));
                 pw.println("</div>");
             }
             pw.println("</div>");
