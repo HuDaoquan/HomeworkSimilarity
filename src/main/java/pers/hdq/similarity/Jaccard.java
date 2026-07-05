@@ -29,7 +29,13 @@ public class Jaccard {
     }
     
     /**
-     * 求并集交集并返回杰卡德系数
+     * 求并集交集并返回杰卡德系数。
+     * 遍历 list2 一次 → 同时构建 list2Map 和 unionMap
+     * 遍历 list1 一次 → 同时判断交集 + 补充并集
+     * 总共 2 次遍历，2 次 Map 构建
+     *
+     * HashSet 版本遍历次数翻倍，而且 HashSet 底层本身就是 HashMap，并没有省掉开销。
+     * HashMap 版本反而更优，因为它在一次遍历中同时完成了交集和并集的计算。
      *
      * @param list1 分好词的List集合1
      * @param list1 分词分好的List集合2

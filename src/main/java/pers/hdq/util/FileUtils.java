@@ -182,21 +182,22 @@ public class FileUtils {
      */
     public static String readFile(String filePath) {
         File file = new File(filePath);
-        String SB = null;
+        String content = "";
         if (file.exists() && file.isFile()) {
             if (filePath.endsWith(".txt")) {
-                SB = readTxt(filePath);
+                content = readTxt(filePath);
             } else if (filePath.endsWith(".doc") || filePath.endsWith(".docx")) {
-                SB = readWordtxt(filePath);
+                content = readWordtxt(filePath);
             } else {
                 System.err.println("给定文件不是txt文档" + filePath);
             }
-            SB = SB.replaceAll("\r|\n", "");// 删除换行符
-//			return SB;
+            if (content != null) {
+                content = content.replaceAll("\r|\n", "");
+            }
         } else {
             System.err.println("给定文件不存在");
         }
-        return SB;
+        return content;
     }
     
     public static void main(String[] args) {
