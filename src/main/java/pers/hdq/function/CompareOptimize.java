@@ -1,6 +1,7 @@
 package pers.hdq.function;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.Setter;
 import pers.hdq.model.DocFileEntity;
 import pers.hdq.model.PlagiarizeEntity;
 import pers.hdq.model.SimilarityOutEntity;
@@ -11,6 +12,8 @@ import pers.hdq.util.EasyExcelUtil;
 import pers.hdq.util.FileUtils;
 import pers.hdq.util.IKUtils;
 import pers.hdq.util.WordPicture;
+import pers.hdq.util.DuplicateReportUtil;
+import pers.hdq.similarity.ParagraphSimilarity;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -19,13 +22,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +43,15 @@ import java.util.stream.Collectors;
  * @Version 1.0
  */
 public class CompareOptimize {
+
+    public interface ProgressCallback {
+        void onProgress(int current, int total);
+    }
+
+    @Setter
+    private static volatile ProgressCallback progressCallback;
+    private static final AtomicInteger comparedCount = new AtomicInteger(0);
+    
     /**
      * 本机CPU核数
      **/
@@ -95,7 +110,7 @@ public class CompareOptimize {
     /**
      * 将小数格式化为百分数
      **/
-    static DecimalFormat numFormat = new DecimalFormat("0.00%");
+    static final ThreadLocal<DecimalFormat> numFormatThreadLocal = ThreadLocal.withInitial(() -> new DecimalFormat("0.00%"));
     
     public static void main(String[] args) throws Exception {
         /*  需要查重的路径*/
@@ -127,6 +142,7 @@ public class CompareOptimize {
     public static void getSimilarityMode1(String path, Boolean ikFlag, Boolean pictureSimFlag,
                                           Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
         
+        comparedCount.set(0);
         System.out.println("开始扫描文档,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         /*  递归遍历目录；获取所有文档绝对路径*/
         List<String> allDocAbsolutePath = recursionWord(path);
@@ -209,8 +225,14 @@ public class CompareOptimize {
         }
         // 排序并导出excel
         sortAndImportExcel(excelPath, detailList, sortMaxResultList, plagiarizeEntityList);
+        
+        String reportDir = path + "\\重复内容标记报告";
+        generateDuplicateReports(detailList, allDocEntityList, threshold, reportDir);
+        
+        fileThreadPool.shutdown();
+        compareThreadPool.shutdown();
+        singleThreadPool.shutdown();
     }
-    
     /**
      * 模式1 外层循环调用
      *
@@ -229,6 +251,7 @@ public class CompareOptimize {
      **/
     private static void getFinishDocCountModel1(Boolean pictureSimFlag, Double threshold, int sumCount,
                                                 List<DocFileEntity> allDocEntityList, List<SimilarityOutEntity> detailList, List<SimilarityOutEntity> sortMaxResultList, List<PlagiarizeEntity> plagiarizeEntityList, int i) {
+        
         // 文档1与其后所有文档的相似度
         List<SimilarityOutEntity> docLeftAllSimList = new ArrayList<>();
         // 文档1
@@ -239,6 +262,10 @@ public class CompareOptimize {
             // 比较文本相似度
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
             docLeftAllSimList.add(cellSimEntity);
+            comparedCount.incrementAndGet();
+            if (progressCallback != null) {
+                progressCallback.onProgress(comparedCount.get(), sumCount);
+            }
         }
         
         if (sumCount <= 100000) {
@@ -292,6 +319,64 @@ public class CompareOptimize {
     }
     
     /**
+     * 为疑似抄袭的文档对生成HTML高亮标记报告
+     *
+     * @param detailList       详细比对结果
+     * @param docEntityList    所有文档实体（含句子拆分数据）
+     * @param threshold        疑似抄袭阈值
+     * @param reportOutputDir  报告输出目录
+     **/
+    private static void generateDuplicateReports(List<SimilarityOutEntity> detailList,
+                                                  List<DocFileEntity> docEntityList,
+                                                  Double threshold,
+                                                  String reportOutputDir) {
+        File reportDir = new File(reportOutputDir);
+        if (!reportDir.exists()) {
+            reportDir.mkdirs();
+        }
+        
+        Map<String, DocFileEntity> docMap = new HashMap<>();
+        for (DocFileEntity doc : docEntityList) {
+            docMap.put(doc.getAbsolutePath(), doc);
+        }
+        
+        int reportCount = 0;
+        for (SimilarityOutEntity sim : detailList) {
+            if (sim.getWeightedSimDouble() == null || sim.getWeightedSimDouble() <= threshold) {
+                continue;
+            }
+            DocFileEntity docLeft = docMap.get(sim.getLeftDocName());
+            DocFileEntity docRight = docMap.get(sim.getRightDocName());
+            if (docLeft == null || docRight == null) {
+                continue;
+            }
+            if (docLeft.getSentences() == null || docRight.getSentences() == null) {
+                continue;
+            }
+            
+            List<ParagraphSimilarity.DuplicateFragment> fragments =
+                    ParagraphSimilarity.findDuplicateFragments(docLeft.getRawText(), docRight.getRawText(), 5);
+            if (fragments.isEmpty()) {
+                continue;
+            }
+            
+            reportCount++;
+            String reportFileName = "重复标记_" + docLeft.getFileName() + "_vs_" + docRight.getFileName()
+                    + "_" + String.format("%.0f%%", sim.getWeightedSimDouble() * 100) + ".html";
+            String reportPath = reportOutputDir + File.separator + reportFileName;
+            
+            DuplicateReportUtil.generateHtmlReport(reportPath,
+                    docLeft.getAbsolutePath(), docLeft.getFileName(), docLeft.getSentences(),
+                    docRight.getAbsolutePath(), docRight.getFileName(), docRight.getSentences(),
+                    fragments);
+        }
+        
+        if (reportCount > 0) {
+            System.out.println("已生成" + reportCount + "份重复内容标记报告，目录：" + reportOutputDir);
+        }
+    }
+    
+    /**
      * 查重方式2：今年的文档两两比较，今年的与往年的比较；往年的互相之间不需要比较
      *
      * @param path           待查重文件夹
@@ -305,6 +390,7 @@ public class CompareOptimize {
      **/
     public static void getSimilarityMode2(String path, Boolean ikFlag, Boolean pictureSimFlag,
                                           Double threshold, String excelPath, Boolean multithreadingFlag) throws Exception {
+        comparedCount.set(0);
         System.out.println("开始扫描文档,当前时间:" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         /*  递归遍历目录；获取所有今年文档绝对路径*/
         List<String> thisYearDocAbsolutePath = recursionWord(path + "\\今年");
@@ -414,6 +500,11 @@ public class CompareOptimize {
             detailList.add(similarityOutEntity);
         }
         sortAndImportExcel(excelPath, detailList, sortMaxResultList, plagiarizeEntityList);
+        
+        String reportDir = path + "\\重复内容标记报告";
+        List<DocFileEntity> allDocs = new ArrayList<>(thisYearDocEntityList);
+        allDocs.addAll(historyYearDocEntityList);
+        generateDuplicateReports(detailList, allDocs, threshold, reportDir);
     }
     
     private static void getFinishDocCountMode2(Boolean pictureSimFlag, Double threshold, int sumCount,
@@ -429,6 +520,10 @@ public class CompareOptimize {
             // 比较两个文档相似度，返回相似度实体
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
             docLeftAllSimList.add(cellSimEntity);
+            comparedCount.incrementAndGet();
+            if (progressCallback != null) {
+                progressCallback.onProgress(comparedCount.get(), sumCount);
+            }
         }
         //往年文档
         for (int j = 0; j < historyYearDocEntityList.size(); j++) {
@@ -437,6 +532,10 @@ public class CompareOptimize {
             // 比较两个文档相似度，返回相似度实体
             SimilarityOutEntity cellSimEntity = comparingTwoDoc(docLeft, docRight, pictureSimFlag, threshold, plagiarizeEntityList);
             docLeftAllSimList.add(cellSimEntity);
+            comparedCount.incrementAndGet();
+            if (progressCallback != null) {
+                progressCallback.onProgress(comparedCount.get(), sumCount);
+            }
         }
         
         if (sumCount <= 100000) {
@@ -475,6 +574,7 @@ public class CompareOptimize {
     public static SimilarityOutEntity comparingTwoDoc(DocFileEntity docLeft, DocFileEntity docRight, Boolean pictureSimFlag,
                                                       Double threshold, List<PlagiarizeEntity> plagiarizeEntityList) {
         
+        DecimalFormat numFormat = numFormatThreadLocal.get();
         /*  余弦相似度*/
         double conSim = CosineSimilarity.sim(docLeft.getWordList(), docRight.getWordList());
         // // 杰卡德相似度
@@ -530,11 +630,11 @@ public class CompareOptimize {
         
         return SimilarityOutEntity.builder()
                 .judgeResult(judgeResult)
-                .conSim(numFormat.format(conSim))
-                .avgPicSim(numFormat.format(avgPicSim))
-                .jaccardSim(numFormat.format(jaccardSim))
+                .conSim(numFormatThreadLocal.get().format(conSim))
+                .avgPicSim(numFormatThreadLocal.get().format(avgPicSim))
+                .jaccardSim(numFormatThreadLocal.get().format(jaccardSim))
                 .leftDocName(docLeft.getAbsolutePath())
-                .weightedSim(numFormat.format(weightedSim))
+                .weightedSim(numFormatThreadLocal.get().format(weightedSim))
                 .rightDocName(docRight.getAbsolutePath())
                 .weightedSimDouble(weightedSim)
                 .build();
@@ -556,14 +656,18 @@ public class CompareOptimize {
     public static DocFileEntity getDocEntity(String path, Boolean pictureSimFlag, Boolean ikFlag) {
         File docFile = new File(path);
         String name = docFile.getName();
+        String rawText = FileUtils.readFile(path).replaceAll("[0-9a-zA-Z]", "");
         DocFileEntity docEntity = DocFileEntity.builder()
                 .fileName(name)
                 .absolutePath(docFile.getAbsolutePath())
                 /*  父路径\\无空格无后缀文件名*/
                 // .pictureParentPath(docFile.getParent() + "\\" + name.replaceAll(" ", "").split("\\.")[0])
                 .build();
+        docEntity.setRawText(rawText);
+        docEntity.setSentences(rawText.split("[。！？；\\.!\\?;]"));
+        docEntity.setWordList(IKUtils.segStr(rawText, ikFlag));
         //将每个文档的文本分词后返回,去除数字和字母，使用IK分词器分词
-        docEntity.setWordList(IKUtils.segStr(FileUtils.readFile(path).replaceAll("[0-9a-zA-Z]", ""), ikFlag));
+        // docEntity.setWordList(IKUtils.segStr(FileUtils.readFile(path).replaceAll("[0-9a-zA-Z]", ""), ikFlag));
         // 比较图片相似度
         if (pictureSimFlag) {
             // 计算文档中图片的hash指纹

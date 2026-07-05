@@ -48,4 +48,14 @@ public class DocFileEntity {
      **/
     private List<String> pictureHashList;
     
+    /**
+     * 原始文本按句子拆分的结果，用于标记重复内容
+     **/
+    private String[] sentences;
+    
+    /**
+     * 原始完整文本（未分词），用于定位重复片段
+     **/
+    private String rawText;
+    
 }

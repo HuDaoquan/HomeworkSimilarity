@@ -30,8 +30,8 @@ public class UIhdq extends JPanel {
     private static JTextArea docLocationTextArea;
     private JCheckBox wordBox;
     private JCheckBox picBox;
-    // private JCheckBox sortBox;
     private static JTextField textPath;
+    private static JProgressBar progressBar;
     
     private Double simThre;
     private JComboBox<String> comboBox;
@@ -287,6 +287,13 @@ public class UIhdq extends JPanel {
         panel2.add(queryModeBox);
         panel2.add(multithreadingBox);
         panel2.add(beginButton);
+        
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setStringPainted(true);
+        progressBar.setString("等待查重...");
+        progressBar.setFont(new Font("仿宋", Font.PLAIN, 14));
+        progressBar.setBounds(10, 240, 750, 25);
+        panel1.add(progressBar);
     }
     
     /**
@@ -314,6 +321,14 @@ public class UIhdq extends JPanel {
                 docLocationTextArea.paintImmediately(docLocationTextArea.getBounds());// 实时输出
             }
         };
+        CompareOptimize.setProgressCallback((current, total) -> {
+            int percent = (int) (current * 100.0 / total);
+            SwingUtilities.invokeLater(() -> {
+                progressBar.setValue(percent);
+                progressBar.setString("查重进度: " + percent + "% (" + current + "/" + total + ")");
+            });
+        });
+        
         PrintStream myOut = new PrintStream(textAreaStream);
         System.setOut(myOut);
         System.setErr(myOut);
