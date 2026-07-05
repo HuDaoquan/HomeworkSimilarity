@@ -60,12 +60,11 @@ public class CosineSimilarity {
      */
     public static double sim(List<String> content1, List<String> content2) {
         Map<String, int[]> vectorMap = wordCount(content1, content2);
-        double result = 0D;
-        if (sqrtMulti(vectorMap) == 0) {
-            return result;
+        double denominator = sqrtMulti(vectorMap);
+        if (denominator == 0) {
+            return 0D;
         }
-        result = pointMulti(vectorMap) / sqrtMulti(vectorMap);
-        return result;
+        return pointMulti(vectorMap) / denominator;
     }
     
     /**

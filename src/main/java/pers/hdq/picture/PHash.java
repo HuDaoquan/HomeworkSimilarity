@@ -42,18 +42,18 @@ public class PHash {
         }
         average /= 64.0;
         // 计算hash值
-        String hash = "";
+        StringBuilder hashBuilder = new StringBuilder(64);
 //		System.out.println("ave"+average);
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (newMatrix[i][j] < average) {
-                    hash += '0';
+                    hashBuilder.append('0');
                 } else {
-                    hash += '1';
+                    hashBuilder.append('1');
                 }
             }
         }
-        return hash;
+        return hashBuilder.toString();
     }
     
     /**
