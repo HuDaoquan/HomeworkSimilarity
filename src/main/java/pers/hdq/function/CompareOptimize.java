@@ -342,7 +342,10 @@ public class CompareOptimize {
         
         int reportCount = 0;
         for (SimilarityOutEntity sim : detailList) {
-            if (sim.getWeightedSimDouble() == null || sim.getWeightedSimDouble() <= threshold) {
+            // if (sim.getWeightedSimDouble() == null || sim.getWeightedSimDouble() <= threshold) {
+            //     continue;
+            // }
+            if (sim.getWeightedSimDouble() == null ) {
                 continue;
             }
             DocFileEntity docLeft = docMap.get(sim.getLeftDocName());
@@ -355,7 +358,7 @@ public class CompareOptimize {
             }
             
             List<ParagraphSimilarity.DuplicateFragment> fragments =
-                    ParagraphSimilarity.findDuplicateFragments(docLeft.getRawText(), docRight.getRawText(), 5);
+                    ParagraphSimilarity.findDuplicateFragments(docLeft.getRawText(), docRight.getRawText(), 5, threshold);
             if (fragments.isEmpty()) {
                 continue;
             }
